@@ -1,0 +1,1685 @@
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>유준이 키우기 - 무한 육아 어드벤처</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #fefce8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Nanum Gothic", sans-serif;
+      touch-action: none;
+    }
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+      z-index: 1;
+    }
+    .hud-layer, .controls-layer {
+      position: absolute;
+      pointer-events: none;
+    }
+    .interactive {
+      pointer-events: auto;
+    }
+    .controls-layer {
+      bottom: max(env(safe-area-inset-bottom, 20px) + 95px, 105px);
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 16px;
+      z-index: 20;
+    }
+    .joystick-base {
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(220,220,220,0.55) 100%);
+      border: 3px solid rgba(255,255,255,0.9);
+      border-radius: 50%;
+      position: relative;
+      touch-action: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+    .joystick-thumb {
+      width: 52px;
+      height: 52px;
+      background: radial-gradient(circle, #fde047 0%, #eab308 100%);
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      pointer-events: none;
+    }
+    .skill-btn {
+      touch-action: none;
+      transition: transform 0.08s ease, filter 0.08s ease;
+    }
+    .skill-btn:active {
+      transform: scale(0.92);
+      filter: brightness(0.9);
+    }
+    .modal-overlay {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+    .allow-scroll {
+      pointer-events: auto !important;
+      touch-action: pan-y !important;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .custom-scroll {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .equip-drawer {
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .equip-drawer.collapsed {
+      transform: translateX(-145px);
+    }
+  </style>
+</head>
+<body class="bg-amber-50">
+
+  <canvas id="game-canvas"></canvas>
+
+  <!-- 상단 HUD 영역 -->
+  <div class="hud-layer top-0 left-0 right-0 p-3 flex flex-col gap-2 z-10">
+    <div class="flex items-center justify-between w-full max-w-md mx-auto">
+      
+      <!-- 유준이 프로필 & 경험치 바 -->
+      <div class="interactive bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-amber-200 flex items-center gap-2.5 min-w-0 flex-1 mr-2">
+        <div id="hud-avatar" class="text-2xl filter drop-shadow shrink-0">👶</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5 leading-tight">
+            <span id="player-name-display" class="font-extrabold text-slate-800 text-sm truncate">유준이</span>
+            <span id="grow-stage-badge" class="text-[10px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-md shrink-0">신생아</span>
+            <span id="level-badge" class="text-xs font-black text-amber-600 shrink-0">Lv.1</span>
+          </div>
+          <!-- HP 게이지 -->
+          <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-1 border border-slate-200 flex">
+            <div id="hp-bar" class="bg-rose-500 h-full transition-all duration-150" style="width: 100%;"></div>
+          </div>
+          <!-- EXP 게이지 -->
+          <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden mt-1 border border-slate-200 flex">
+            <div id="exp-bar" class="bg-gradient-to-r from-amber-400 to-yellow-500 h-full transition-all duration-150" style="width: 0%;"></div>
+          </div>
+          <div class="flex justify-between items-center text-[9px] font-semibold text-slate-400 mt-0.5">
+            <span id="hp-text">120/120</span>
+            <span id="exp-text" class="text-amber-600 font-black">EXP 0% (0/100)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 코인 & 랭킹 & 상점 버튼 -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <div class="bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-2xl shadow-md border border-amber-200 flex items-center gap-1 shrink-0">
+          <span class="text-base">🪙</span>
+          <span id="coin-count" class="font-black text-slate-800 text-sm tracking-tight tabular-nums">0</span>
+        </div>
+        <button id="btn-rankings" class="interactive bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-md border border-amber-200 text-slate-700 active:scale-95 transition-transform shrink-0" title="명예의 전당">
+          🏆
+        </button>
+        <button id="btn-shop" class="interactive bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs px-3 py-2 rounded-2xl shadow-md active:scale-95 flex items-center gap-1 shrink-0" title="상점">
+          🛒 상점
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 왼쪽 세로형 장비 바 (글자 짤림 방지 138px 너비 + 토글 접기/펼치기) -->
+  <div id="equip-sidebar" class="equip-drawer hud-layer z-20" style="top: 76px; left: 8px;">
+    <div class="flex items-start">
+      <div class="interactive rounded-2xl p-2 shadow-xl border border-slate-600/50 flex flex-col gap-1 w-[138px] max-h-[58vh] overflow-hidden" style="background-color: rgba(30, 41, 59, 0.78); backdrop-filter: blur(8px);">
+        <div class="flex items-center justify-between pb-1 border-b border-slate-600/60 text-white text-[10px] font-bold">
+          <span class="flex items-center gap-1 text-amber-300">🎒 장비</span>
+          <span id="equip-count" class="text-slate-300">0/10</span>
+        </div>
+        <div id="equip-slot-container" class="allow-scroll custom-scroll overflow-y-auto pr-0.5 flex flex-col gap-1 text-white text-[10px]">
+          <div class="text-[9px] text-slate-300 text-center py-2">상점에서 아이템을 구매하면 장착됩니다</div>
+        </div>
+      </div>
+      <button id="btn-toggle-equip" class="interactive bg-amber-500 text-white text-xs font-black w-6 h-9 rounded-r-xl shadow-lg flex items-center justify-center -ml-0.5 mt-2 active:bg-amber-600">
+        &lt;
+      </button>
+    </div>
+  </div>
+
+  <!-- 장비 상세 미니 툴팁 -->
+  <div id="item-tooltip" class="fixed hidden z-50 bg-slate-900/95 text-white p-2.5 rounded-xl shadow-2xl border border-slate-700 max-w-[190px] pointer-events-none text-left">
+    <div id="tt-title" class="font-black text-xs text-amber-300 flex items-center gap-1"></div>
+    <div id="tt-stat" class="text-[10px] text-slate-200 mt-1 font-medium"></div>
+    <div id="tt-type" class="text-[9px] text-slate-400 mt-0.5"></div>
+  </div>
+
+  <!-- 하단 컨트롤 레이어 (2x2 그리드 스킬 버튼 + 모바일 상향 배치 조이스틱) -->
+  <div class="controls-layer z-20">
+    <div class="interactive joystick-base" id="joystick-base">
+      <div class="joystick-thumb" id="joystick-thumb"></div>
+    </div>
+
+    <div class="interactive grid grid-cols-2 gap-2.5">
+      <!-- 1행: 똥폭탄, 방귀 -->
+      <button id="btn-skill-poop" class="skill-btn bg-amber-800/95 text-white p-2.5 rounded-2xl shadow-lg border-2 border-amber-600 flex flex-col items-center justify-center w-16 h-16 relative">
+        <span class="text-2xl pointer-events-none">💩</span>
+        <span class="text-[9px] font-black mt-0.5 pointer-events-none">똥폭탄</span>
+        <div id="cool-poop" class="absolute inset-0 bg-black/60 rounded-2xl hidden flex items-center justify-center font-black text-xs text-white pointer-events-none">0s</div>
+      </button>
+
+      <button id="btn-skill-fart" class="skill-btn bg-emerald-600/95 text-white p-2.5 rounded-2xl shadow-lg border-2 border-emerald-400 flex flex-col items-center justify-center w-16 h-16 relative">
+        <span class="text-2xl pointer-events-none">💨</span>
+        <span class="text-[9px] font-black mt-0.5 pointer-events-none">방귀</span>
+        <div id="cool-fart" class="absolute inset-0 bg-black/60 rounded-2xl hidden flex items-center justify-center font-black text-xs text-white pointer-events-none">0s</div>
+      </button>
+
+      <!-- 2행: 대성통곡, 기본공격 (누르고 있으면 자동 연속 무빙샷) -->
+      <button id="btn-skill-cry" class="skill-btn bg-blue-600/95 text-white p-2.5 rounded-2xl shadow-lg border-2 border-blue-400 flex flex-col items-center justify-center w-16 h-16 relative">
+        <span class="text-2xl pointer-events-none">😭</span>
+        <span class="text-[9px] font-black mt-0.5 pointer-events-none">대성통곡</span>
+        <div id="cool-cry" class="absolute inset-0 bg-black/60 rounded-2xl hidden flex items-center justify-center font-black text-xs text-white pointer-events-none">0s</div>
+      </button>
+
+      <button id="btn-attack" class="skill-btn bg-gradient-to-tr from-pink-500 to-rose-400 text-white p-2.5 rounded-2xl shadow-xl border-2 border-white flex flex-col items-center justify-center w-16 h-16">
+        <span id="atk-btn-icon" class="text-2xl pointer-events-none">🍼</span>
+        <span id="atk-btn-text" class="text-[9px] font-black mt-0.5 pointer-events-none">분유던지기</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 상점 모달창 -->
+  <div id="shop-modal" class="fixed inset-0 modal-overlay z-40 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col max-h-[84vh] overflow-hidden border-4 border-amber-300">
+      <div class="bg-gradient-to-r from-amber-400 to-orange-400 p-3.5 text-white flex items-center justify-between shrink-0">
+        <div>
+          <h2 class="font-black text-base flex items-center gap-1.5">🛍️ 유준이 육아 백화점</h2>
+          <p class="text-[10px] text-amber-100 font-medium">아이템을 사서 장착할수록 유준이가 강해집니다!</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="bg-black/20 px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1">
+            <span>🪙</span>
+            <span id="modal-coin">0</span>
+          </div>
+          <button id="btn-close-shop" class="text-white bg-black/20 hover:bg-black/40 rounded-full w-7 h-7 flex items-center justify-center font-black">✕</button>
+        </div>
+      </div>
+      <div id="shop-item-list" class="allow-scroll custom-scroll flex-1 overflow-y-auto p-3 flex flex-col gap-2 pb-16"></div>
+    </div>
+  </div>
+
+  <!-- 랭킹 모달창 -->
+  <div id="rank-modal" class="fixed inset-0 modal-overlay z-40 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col max-h-[75vh] overflow-hidden border-4 border-amber-300">
+      <div class="bg-amber-400 p-3.5 text-white flex items-center justify-between shrink-0">
+        <h2 class="font-black text-base flex items-center gap-1.5">🏆 명예의 전당 (랭킹)</h2>
+        <button id="btn-close-rank" class="text-white bg-black/20 hover:bg-black/40 rounded-full w-7 h-7 flex items-center justify-center font-black">✕</button>
+      </div>
+      <div id="rank-list" class="allow-scroll custom-scroll flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
+    </div>
+  </div>
+
+  <!-- 시작 전 닉네임 입력 & 랭킹 Top 5 확인 모달 -->
+  <div id="start-modal" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-5 border-4 border-amber-300 text-center flex flex-col max-h-[90vh] overflow-hidden">
+      <div class="text-4xl mb-1">👶</div>
+      <h1 class="text-lg font-black text-slate-800 leading-tight">유준이 키우기</h1>
+      <p class="text-[11px] text-slate-500 mt-0.5">사나운 악당을 물리치고 유준이를 키워주세요!</p>
+      
+      <div class="mt-3 text-left">
+        <label class="text-[11px] font-bold text-slate-600 block mb-1">플레이어 / 보호자 닉네임</label>
+        <input type="text" id="player-nickname-input" maxlength="8" placeholder="닉네임을 입력하세요" class="w-full px-3 py-2 border-2 border-amber-300 rounded-xl font-bold text-sm text-slate-800 focus:outline-none focus:border-amber-500" value="">
+      </div>
+
+      <button id="btn-start-game" class="w-full mt-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black py-2.5 rounded-2xl shadow-md active:scale-95 transition-transform text-xs">
+        🍼 모험 시작하기!
+      </button>
+
+      <div class="mt-3 pt-3 border-t border-slate-100 flex-1 overflow-hidden flex flex-col text-left">
+        <div class="text-[11px] font-black text-amber-700 flex items-center justify-between mb-1.5">
+          <span class="flex items-center gap-1">🏆 명예의 전당 Top 5</span>
+          <span class="text-[9px] text-slate-400 font-normal">최고 득점 순위</span>
+        </div>
+        <div id="start-rank-preview" class="allow-scroll custom-scroll flex-1 overflow-y-auto space-y-1.5 pr-0.5 max-h-[140px]"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 진화 축하 팝업 -->
+  <div id="evolve-modal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-6 border-4 border-amber-400 text-center animate-bounce">
+      <div id="evolve-icon" class="text-6xl mb-2">🧒</div>
+      <h3 class="text-xs font-black text-amber-500 tracking-wider">성장 축하합니다!</h3>
+      <h2 id="evolve-title" class="text-xl font-black text-slate-800 mt-1">유준이가 진화했습니다!</h2>
+      <p id="evolve-desc" class="text-xs text-slate-600 mt-2 font-medium"></p>
+      <button id="btn-close-evolve" class="mt-4 bg-amber-500 text-white font-black text-sm px-6 py-2.5 rounded-2xl shadow-md active:scale-95">
+        계속 모험하기
+      </button>
+    </div>
+  </div>
+
+  <!-- 게임 오버 모달 & 단일 링크 카톡 공유 -->
+  <div id="gameover-modal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-5 border-4 border-rose-400 text-center">
+      <div class="text-5xl mb-2">😢</div>
+      <h2 class="text-xl font-black text-slate-800">모험이 끝났습니다</h2>
+      <p id="over-stage-text" class="text-xs text-slate-500 mt-0.5"></p>
+      
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 my-3">
+        <div class="text-[11px] text-amber-700 font-bold">최종 획득 점수</div>
+        <div id="final-score" class="text-2xl font-black text-slate-800">0 P</div>
+        <div id="final-stats" class="text-[10px] text-slate-500 mt-1"></div>
+      </div>
+
+      <button id="btn-kakao-share" class="w-full bg-[#FEE500] hover:bg-[#FDD835] text-[#3c1e1e] font-black py-2.5 rounded-2xl shadow-md active:scale-95 transition-transform text-xs flex items-center justify-center gap-1.5 mb-2">
+        <span class="text-sm">💬</span> 결과 & 게임 링크 카톡 공유하기
+      </button>
+
+      <button id="btn-restart" class="w-full bg-slate-800 text-white font-black py-2.5 rounded-2xl shadow-md active:scale-95 transition-transform text-xs">
+        🔄 다시 도전하기
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* ========================================================
+       1. Web Audio API 사운드 합성 엔진
+       ======================================================== */
+    const Sound = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      },
+      play(type) {
+        if (!this.ctx) return;
+        try {
+          const t = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          if (type === 'shoot') {
+            osc.frequency.setValueAtTime(520, t);
+            osc.frequency.exponentialRampToValueAtTime(180, t + 0.1);
+            gain.gain.setValueAtTime(0.2, t);
+            gain.gain.linearRampToValueAtTime(0.01, t + 0.1);
+            osc.start(t); osc.stop(t + 0.1);
+          } else if (type === 'hit') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(140, t);
+            osc.frequency.linearRampToValueAtTime(60, t + 0.08);
+            gain.gain.setValueAtTime(0.25, t);
+            gain.gain.linearRampToValueAtTime(0.01, t + 0.08);
+            osc.start(t); osc.stop(t + 0.08);
+          } else if (type === 'fart') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(110, t);
+            osc.frequency.exponentialRampToValueAtTime(45, t + 0.28);
+            gain.gain.setValueAtTime(0.3, t);
+            gain.gain.linearRampToValueAtTime(0.01, t + 0.28);
+            osc.start(t); osc.stop(t + 0.28);
+          } else if (type === 'poop') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(220, t);
+            osc.frequency.exponentialRampToValueAtTime(80, t + 0.25);
+            gain.gain.setValueAtTime(0.3, t);
+            gain.gain.linearRampToValueAtTime(0.01, t + 0.25);
+            osc.start(t); osc.stop(t + 0.25);
+          } else if (type === 'cry') {
+            osc.frequency.setValueAtTime(600, t);
+            osc.frequency.linearRampToValueAtTime(900, t + 0.2);
+            osc.frequency.linearRampToValueAtTime(500, t + 0.4);
+            gain.gain.setValueAtTime(0.35, t);
+            gain.gain.linearRampToValueAtTime(0.01, t + 0.4);
+            osc.start(t); osc.stop(t + 0.4);
+          } else if (type === 'coin') {
+            osc.frequency.setValueAtTime(950, t);
+            osc.frequency.setValueAtTime(1300, t + 0.08);
+            gain.gain.setValueAtTime(0.25, t);
+            gain.gain.linearRampToValueAtTime(0.01, t + 0.16);
+            osc.start(t); osc.stop(t + 0.16);
+          } else if (type === 'levelup') {
+            [440, 554, 659, 880].forEach((freq, idx) => {
+              const o = this.ctx.createOscillator();
+              const g = this.ctx.createGain();
+              o.connect(g); g.connect(this.ctx.destination);
+              o.frequency.setValueAtTime(freq, t + idx * 0.08);
+              g.gain.setValueAtTime(0.25, t + idx * 0.08);
+              g.gain.linearRampToValueAtTime(0.01, t + idx * 0.08 + 0.2);
+              o.start(t + idx * 0.08); o.stop(t + idx * 0.08 + 0.2);
+            });
+          }
+        } catch(e) {}
+      }
+    };
+
+    /* ========================================================
+       2. 육아 아이템 10종 & 3단계 데이터베이스
+       ======================================================== */
+    const ITEMS_DATA = [
+      {
+        id: "diaper", name: "기저귀", icon: "🧷", attr: "위생 / 쾌적함",
+        tiers: [
+          { name: "천 기저귀", cost: 50, desc: "초당 HP +2 재생, 방어력 +1", hpRegen: 2, def: 1 },
+          { name: "나비잠 기저귀", cost: 130, desc: "초당 HP +5 재생, 방어력 +3", hpRegen: 5, def: 3 },
+          { name: "하기스 기저귀", cost: 300, desc: "초당 HP +10 재생, 방어력 +7, 최대HP +50", hpRegen: 10, def: 7, maxHp: 50 }
+        ]
+      },
+      {
+        id: "swaddle", name: "속싸개", icon: "🧣", attr: "안정감 / 수면",
+        tiers: [
+          { name: "부직포", cost: 60, desc: "받는 피해 15% 감소", dmgReduction: 0.15 },
+          { name: "보자기", cost: 150, desc: "받는 피해 30% 감소", dmgReduction: 0.30 },
+          { name: "아뜰리에슈", cost: 350, desc: "받는 피해 45% 감소, 넉백 저항", dmgReduction: 0.45, knockbackResist: true }
+        ]
+      },
+      {
+        id: "clothes", name: "아기 옷", icon: "👕", attr: "패션 / 인기",
+        tiers: [
+          { name: "탑텐 옷", cost: 70, desc: "치명타율 +15%, 치명피해 1.3배", critRate: 0.15, critDmg: 1.3, color: "#fef08a" },
+          { name: "아가방 옷", cost: 180, desc: "치명타율 +30%, 치명피해 1.6배", critRate: 0.30, critDmg: 1.6, color: "#a7f3d0" },
+          { name: "베베드피노 옷", cost: 400, desc: "치명타율 +45%, 치명피해 2.0배, 전용하트패턴", critRate: 0.45, critDmg: 2.0, color: "#fbcfe8", badge: true }
+        ]
+      },
+      {
+        id: "bottle", name: "젖병", icon: "🍼", attr: "포만감 / 성장",
+        tiers: [
+          { name: "일반 젖병", cost: 60, desc: "기본 공격력 +15, 탄속 증가", atk: 15, projSpeed: 1.5 },
+          { name: "더블하트 젖병", cost: 160, desc: "기본 공격력 +35, 발사속도 증가", atk: 35, projSpeed: 2.5, atkSpeed: 1.3 },
+          { name: "프리미엄 세트", cost: 380, desc: "기본 공격력 +70, 더블샷 발사", atk: 70, projSpeed: 3.5, doubleShot: true }
+        ]
+      },
+      {
+        id: "bed", name: "아기 침대", icon: "🛏️", attr: "수면 / 회복력",
+        tiers: [
+          { name: "바닥 이불", cost: 80, desc: "최대 체력 +60", maxHp: 60 },
+          { name: "원목 침대", cost: 200, desc: "최대 체력 +150, 피격무적 0.3초", maxHp: 150, iframe: 0.3 },
+          { name: "프리미엄 침대", cost: 420, desc: "최대 체력 +300, 부활 1회 보너스", maxHp: 300, revive: true }
+        ]
+      },
+      {
+        id: "stroller", name: "유모차", icon: "🚼", attr: "외출 경험치 / 행복",
+        tiers: [
+          { name: "기본 아기띠", cost: 70, desc: "이동속도 +20%", speed: 0.8 },
+          { name: "휴대용 유모차", cost: 190, desc: "이동속도 +40%, 바퀴 장착 외형", speed: 1.6, visualStroller: 1 },
+          { name: "디럭스 유모차", cost: 450, desc: "이동속도 +65%, 잔상 대시 & 오라", speed: 2.6, visualStroller: 2, aura: true }
+        ]
+      },
+      {
+        id: "toy", name: "장난감", icon: "🪇", attr: "지능 / 감각 / 행복",
+        tiers: [
+          { name: "딸랑이", cost: 75, desc: "스킬 쿨타임 15% 단축", coolReduce: 0.15 },
+          { name: "치발기", cost: 180, desc: "스킬 쿨타임 30% 단축, 폭탄반경 +25%", coolReduce: 0.30, bombRadius: 1.25 },
+          { name: "감각 발달 장난감", cost: 390, desc: "스킬 쿨타임 45% 단축, 방귀 넉백 2배", coolReduce: 0.45, fartPower: 2.0 }
+        ]
+      },
+      {
+        id: "wipes", name: "물티슈", icon: "🧻", attr: "위생 / 건강",
+        tiers: [
+          { name: "일반 물티슈", cost: 65, desc: "적 처치 시 체력 +2 즉시 회복", lifeSteal: 2 },
+          { name: "엠보싱 물티슈", cost: 170, desc: "적 처치 시 체력 +5 즉시 회복", lifeSteal: 5 },
+          { name: "프리미엄 물티슈", cost: 360, desc: "적 처치 시 체력 +12 회복, 독 저항", lifeSteal: 12, cleanse: true }
+        ]
+      },
+      {
+        id: "bath", name: "목욕용품", icon: "🛁", attr: "위생 / 행복",
+        tiers: [
+          { name: "세숫대야", cost: 80, desc: "코인 획득량 +25%", coinBonus: 0.25 },
+          { name: "아기 욕조", cost: 190, desc: "코인 +50%, 획득 경험치 +30%", coinBonus: 0.50, expBonus: 0.30 },
+          { name: "신생아 욕조", cost: 400, desc: "코인 +100%, 획득 경험치 +60%", coinBonus: 1.0, expBonus: 0.60 }
+        ]
+      },
+      {
+        id: "babyfood", name: "이유식 용품", icon: "🥣", attr: "건강 / 성장",
+        tiers: [
+          { name: "일반 용기", cost: 90, desc: "모든 공격 피해량 +20%", dmgAmp: 0.20 },
+          { name: "보관 큐브", cost: 220, desc: "모든 공격 피해량 +45%", dmgAmp: 0.45 },
+          { name: "프리미엄 세트", cost: 480, desc: "모든 공격 피해량 +85%, 탄환 관통 +1", dmgAmp: 0.85, pierce: 1 }
+        ]
+      }
+    ];
+
+    /* ========================================================
+       3. 4단계 성장 진화 정의
+       ======================================================== */
+    const GROW_STAGES = [
+      { minLv: 1, name: "신생아", icon: "👶", title: "호기심 많은 신생아", atkName: "분유던지기", atkIcon: "🍼", desc: "분유를 힘차게 던져 악당을 물리칩니다." },
+      { minLv: 10, name: "어린이", icon: "🧒", title: "씩씩한 유치원생", atkName: "주스발사", atkIcon: "🧃", desc: "키가 쑥 자라고 주스 팩을 발사해 공격합니다!" },
+      { minLv: 20, name: "청소년", icon: "🧑", title: "당당한 청소년", atkName: "에너지탄", atkIcon: "⚡", desc: "민첩해진 발걸음과 강력한 에너지탄을 날립니다!" },
+      { minLv: 30, name: "멋진 어른", icon: "🦸", title: "유준이 영웅 완성체", atkName: "히어로 샷", atkIcon: "🔥", desc: "황금빛 오라를 두르고 세상을 지키는 어른으로 성장했습니다!" }
+    ];
+
+    /* ========================================================
+       4. 게임 상태 객체 (클린 초기화 보장)
+       ======================================================== */
+    const state = {
+      playerName: "익명의 수호자",
+      coins: 0,
+      score: 0,
+      items: {},
+      kills: 0,
+      isPaused: true,
+      isGameOver: false,
+      lastGrowthStage: 0,
+      equipDrawerOpen: true
+    };
+
+    const player = {
+      x: 200, y: 350,
+      baseSpeed: 180,
+      level: 1,
+      exp: 0,
+      maxExp: 100,
+      hp: 120,
+      maxHp: 120,
+      dirX: 0, dirY: -1,
+      isMoving: false,
+      walkCycle: 0,
+      reviveUsed: false,
+      isAttacking: false,
+      attackTimer: 0
+    };
+
+    const cooldowns = { poop: 0, fart: 0, cry: 0 };
+    let enemies = [];
+    let projectiles = [];
+    let particles = [];
+    let damageTexts = [];
+    let worldCoins = [];
+
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    let width = 360;
+    let height = 640;
+
+    function resize() {
+      width = Math.max(300, window.innerWidth || document.documentElement.clientWidth || 360);
+      height = Math.max(400, window.innerHeight || document.documentElement.clientHeight || 640);
+      canvas.width = width;
+      canvas.height = height;
+
+      if (!player.x || isNaN(player.x) || player.x <= 0) player.x = width / 2;
+      if (!player.y || isNaN(player.y) || player.y <= 0) player.y = height / 2;
+    }
+    window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+    resize();
+
+    /* ========================================================
+       5. 능력치 계산기
+       ======================================================== */
+    function calcStats() {
+      let stats = {
+        maxHp: 120, hpRegen: 0, def: 0, dmgReduction: 0,
+        critRate: 0.05, critDmg: 1.5, atk: 25, projSpeed: 450,
+        doubleShot: false, speedBonus: 0, coolReduce: 0, bombRadius: 1,
+        lifeSteal: 0, coinBonus: 0, expBonus: 0, dmgAmp: 0, pierce: 0,
+        strollerLevel: 0, aura: false, clothColor: "#fde047"
+      };
+
+      stats.maxHp += (player.level - 1) * 20;
+      stats.atk += (player.level - 1) * 4;
+
+      for (const [id, tierIdx] of Object.entries(state.items)) {
+        const itemDef = ITEMS_DATA.find(i => i.id === id);
+        if (!itemDef) continue;
+        const tier = itemDef.tiers[tierIdx];
+
+        if (tier.maxHp) stats.maxHp += tier.maxHp;
+        if (tier.hpRegen) stats.hpRegen += tier.hpRegen;
+        if (tier.def) stats.def += tier.def;
+        if (tier.dmgReduction) stats.dmgReduction = Math.max(stats.dmgReduction, tier.dmgReduction);
+        if (tier.critRate) stats.critRate += tier.critRate;
+        if (tier.critDmg) stats.critDmg = Math.max(stats.critDmg, tier.critDmg);
+        if (tier.atk) stats.atk += tier.atk;
+        if (tier.projSpeed) stats.projSpeed += tier.projSpeed * 30;
+        if (tier.doubleShot) stats.doubleShot = true;
+        if (tier.speed) stats.speedBonus += tier.speed * 40;
+        if (tier.coolReduce) stats.coolReduce = Math.max(stats.coolReduce, tier.coolReduce);
+        if (tier.bombRadius) stats.bombRadius *= tier.bombRadius;
+        if (tier.lifeSteal) stats.lifeSteal += tier.lifeSteal;
+        if (tier.coinBonus) stats.coinBonus += tier.coinBonus;
+        if (tier.expBonus) stats.expBonus += tier.expBonus;
+        if (tier.dmgAmp) stats.dmgAmp += tier.dmgAmp;
+        if (tier.pierce) stats.pierce += tier.pierce;
+        if (tier.visualStroller) stats.strollerLevel = tier.visualStroller;
+        if (tier.aura) stats.aura = true;
+        if (tier.color) stats.clothColor = tier.color;
+      }
+      return stats;
+    }
+
+    function getCurrentStage() {
+      let stageIdx = 0;
+      for (let i = GROW_STAGES.length - 1; i >= 0; i--) {
+        if (player.level >= GROW_STAGES[i].minLv) {
+          stageIdx = i;
+          break;
+        }
+      }
+      return { stage: GROW_STAGES[stageIdx], idx: stageIdx };
+    }
+
+    /* ========================================================
+       6. 가상 조이스틱 & 독립 멀티터치 컨트롤 (무빙샷)
+       ======================================================== */
+    const joyBase = document.getElementById('joystick-base');
+    const joyThumb = document.getElementById('joystick-thumb');
+    let joyTouchId = null;
+    let joyVector = { x: 0, y: 0 };
+    let isMouseDraggingJoy = false;
+
+    // 모바일 터치 이벤트
+    joyBase.addEventListener('touchstart', (e) => {
+      e.preventDefault(); Sound.init();
+      if (joyTouchId !== null) return;
+      const touch = e.changedTouches[0];
+      joyTouchId = touch.identifier;
+      updateJoystick(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+      if (joyTouchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joyTouchId) {
+          updateJoystick(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+          break;
+        }
+      }
+    }, { passive: false });
+
+    function resetJoystick() {
+      joyTouchId = null;
+      isMouseDraggingJoy = false;
+      joyVector = { x: 0, y: 0 };
+      joyThumb.style.transform = `translate(-50%, -50%)`;
+      player.isMoving = false;
+    }
+
+    window.addEventListener('touchend', (e) => {
+      if (joyTouchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joyTouchId) {
+          resetJoystick();
+          break;
+        }
+      }
+    });
+
+    window.addEventListener('touchcancel', (e) => {
+      if (joyTouchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === joyTouchId) {
+          resetJoystick();
+          break;
+        }
+      }
+    });
+
+    // PC 마우스 드래그 조이스틱 지원
+    joyBase.addEventListener('mousedown', (e) => {
+      e.preventDefault(); Sound.init();
+      isMouseDraggingJoy = true;
+      updateJoystick(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isMouseDraggingJoy) return;
+      updateJoystick(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isMouseDraggingJoy) resetJoystick();
+    });
+
+    function updateJoystick(clientX, clientY) {
+      const rect = joyBase.getBoundingClientRect();
+      const dx = clientX - (rect.left + rect.width / 2);
+      const dy = clientY - (rect.top + rect.height / 2);
+      const dist = Math.hypot(dx, dy);
+      const maxR = rect.width / 2 - 10;
+
+      if (dist === 0) {
+        joyVector = { x: 0, y: 0 };
+        joyThumb.style.transform = `translate(-50%, -50%)`;
+        player.isMoving = false;
+        return;
+      }
+
+      const clampedDist = Math.min(dist, maxR);
+      const nx = dx / dist;
+      const ny = dy / dist;
+
+      joyVector = { x: nx * (clampedDist / maxR), y: ny * (clampedDist / maxR) };
+      joyThumb.style.transform = `translate(calc(-50% + ${nx * clampedDist}px), calc(-50% + ${ny * clampedDist}px))`;
+      
+      player.dirX = nx;
+      player.dirY = ny;
+      player.isMoving = true;
+    }
+
+    // PC 키보드 지원
+    const keys = {};
+    window.addEventListener('keydown', (e) => {
+      keys[e.key.toLowerCase()] = true;
+      if (e.code === 'Space') player.isAttacking = true;
+      if (e.key === '1' || e.key === 'q') triggerPoop();
+      if (e.key === '2' || e.key === 'e') triggerFart();
+      if (e.key === '3' || e.key === 'r') triggerCry();
+    });
+    window.addEventListener('keyup', (e) => {
+      keys[e.key.toLowerCase()] = false;
+      if (e.code === 'Space') player.isAttacking = false;
+    });
+
+    // 기본 공격 무빙샷 연사 버튼
+    const atkBtn = document.getElementById('btn-attack');
+    atkBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault(); Sound.init();
+      player.isAttacking = true;
+      tryShoot();
+    }, { passive: false });
+
+    window.addEventListener('touchend', (e) => {
+      let stillAtk = false;
+      for (let i = 0; i < e.touches.length; i++) {
+        if (e.touches[i].target === atkBtn || atkBtn.contains(e.touches[i].target)) {
+          stillAtk = true; break;
+        }
+      }
+      if (!stillAtk) player.isAttacking = false;
+    });
+
+    atkBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault(); Sound.init();
+      player.isAttacking = true;
+      tryShoot();
+    });
+    window.addEventListener('mouseup', () => { player.isAttacking = false; });
+
+    document.getElementById('btn-skill-poop').addEventListener('touchstart', (e) => { e.preventDefault(); Sound.init(); triggerPoop(); }, { passive: false });
+    document.getElementById('btn-skill-poop').addEventListener('click', triggerPoop);
+    document.getElementById('btn-skill-fart').addEventListener('touchstart', (e) => { e.preventDefault(); Sound.init(); triggerFart(); }, { passive: false });
+    document.getElementById('btn-skill-fart').addEventListener('click', triggerFart);
+    document.getElementById('btn-skill-cry').addEventListener('touchstart', (e) => { e.preventDefault(); Sound.init(); triggerCry(); }, { passive: false });
+    document.getElementById('btn-skill-cry').addEventListener('click', triggerCry);
+
+    /* ========================================================
+       7. 오토 타겟팅(자동 조준) & 스킬 시전
+       ======================================================== */
+    function getNearestEnemy() {
+      let nearest = null;
+      let minDist = Infinity;
+      for (let i = 0; i < enemies.length; i++) {
+        const en = enemies[i];
+        if (en.dead) continue;
+        const d = Math.hypot(en.x - player.x, en.y - player.y);
+        if (d < minDist) {
+          minDist = d;
+          nearest = en;
+        }
+      }
+      return nearest;
+    }
+
+    function tryShoot() {
+      if (state.isPaused || state.isGameOver || player.attackTimer > 0) return;
+      const stats = calcStats();
+      const current = getCurrentStage().stage;
+
+      const target = getNearestEnemy();
+      let angle;
+      if (target) {
+        angle = Math.atan2(target.y - player.y, target.x - player.x);
+        player.dirX = Math.cos(angle);
+        player.dirY = Math.sin(angle);
+      } else {
+        angle = Math.atan2(player.dirY, player.dirX);
+      }
+
+      Sound.play('shoot');
+
+      const speed = stats.projSpeed;
+      const createProj = (ang) => ({
+        x: player.x, y: player.y,
+        vx: Math.cos(ang) * speed,
+        vy: Math.sin(ang) * speed,
+        damage: stats.atk * (1 + stats.dmgAmp),
+        critRate: stats.critRate,
+        critDmg: stats.critDmg,
+        pierce: stats.pierce,
+        type: current.atkIcon,
+        radius: 13,
+        life: 1.4
+      });
+
+      if (stats.doubleShot) {
+        projectiles.push(createProj(angle - 0.15));
+        projectiles.push(createProj(angle + 0.15));
+      } else {
+        projectiles.push(createProj(angle));
+      }
+
+      player.attackTimer = 0.22; // 연사 간격
+    }
+
+    function triggerPoop() {
+      if (state.isPaused || state.isGameOver || cooldowns.poop > 0) return;
+      const stats = calcStats();
+      Sound.play('poop');
+      
+      const rad = 110 * stats.bombRadius;
+      particles.push({ type: 'poop-blast', x: player.x, y: player.y, radius: 10, maxRadius: rad, alpha: 1 });
+
+      for (let i = 0; i < enemies.length; i++) {
+        const en = enemies[i];
+        if (en.dead) continue;
+        const d = Math.hypot(en.x - player.x, en.y - player.y);
+        if (d <= rad) applyDamage(en, stats.atk * 2.8 * (1 + stats.dmgAmp), false, "💩");
+      }
+
+      cooldowns.poop = 5.0 * (1 - stats.coolReduce);
+    }
+
+    function triggerFart() {
+      if (state.isPaused || state.isGameOver || cooldowns.fart > 0) return;
+      const stats = calcStats();
+      Sound.play('fart');
+
+      particles.push({ type: 'fart-cloud', x: player.x - player.dirX * 25, y: player.y - player.dirY * 25, radius: 15, maxRadius: 90, alpha: 0.9 });
+
+      for (let i = 0; i < enemies.length; i++) {
+        const en = enemies[i];
+        if (en.dead) continue;
+        const d = Math.hypot(en.x - player.x, en.y - player.y);
+        if (d < 140) {
+          en.x += player.dirX * 90;
+          en.y += player.dirY * 90;
+          applyDamage(en, stats.atk * 1.5 * (1 + stats.dmgAmp), false, "💨");
+        }
+      }
+
+      player.x += player.dirX * 35;
+      player.y += player.dirY * 35;
+      cooldowns.fart = 4.0 * (1 - stats.coolReduce);
+    }
+
+    function triggerCry() {
+      if (state.isPaused || state.isGameOver || cooldowns.cry > 0) return;
+      const stats = calcStats();
+      Sound.play('cry');
+
+      particles.push({ type: 'cry-wave', x: player.x, y: player.y, radius: 20, maxRadius: width * 0.75, alpha: 1 });
+
+      for (let i = 0; i < enemies.length; i++) {
+        const en = enemies[i];
+        if (en.dead) continue;
+        applyDamage(en, stats.atk * 3.5 * (1 + stats.dmgAmp), true, "😭");
+        en.stunTimer = 1.5;
+      }
+
+      cooldowns.cry = 8.0 * (1 - stats.coolReduce);
+    }
+
+    /* ========================================================
+       8. 피격 처리 & 경험치/레벨업 완전 버그 픽스
+       ======================================================== */
+    function applyDamage(enemy, baseDmg, isCry, icon) {
+      if (!enemy || enemy.dead) return;
+      const stats = calcStats();
+      const isCrit = Math.random() < stats.critRate;
+      let finalDmg = Math.round(isCrit ? baseDmg * stats.critDmg : baseDmg);
+
+      enemy.hp -= finalDmg;
+
+      damageTexts.push({
+        text: (isCrit ? "CRIT! " : "") + finalDmg + (icon ? ` ${icon}` : ""),
+        x: enemy.x + (Math.random() - 0.5) * 20,
+        y: enemy.y - 15,
+        color: isCrit ? "#f43f5e" : "#fbbf24",
+        scale: isCrit ? 1.4 : 1.0,
+        alpha: 1, life: 0.6
+      });
+
+      Sound.play('hit');
+
+      // 적 사망 판정: 즉시 경험치 지급 및 레벨업 체크
+      if (enemy.hp <= 0) {
+        enemy.dead = true;
+        state.kills = (state.kills || 0) + 1;
+        state.score = (state.score || 0) + (enemy.scoreVal || 50);
+
+        if (stats.lifeSteal > 0) {
+          player.hp = Math.min(stats.maxHp, player.hp + stats.lifeSteal);
+        }
+
+        const earnedCoin = Math.max(1, Math.round((enemy.coinVal || 6) * (1 + stats.coinBonus)));
+        const earnedExp = Math.max(25, Math.round((enemy.expVal || 35) * (1 + stats.expBonus)));
+
+        // 코인 구슬 생성
+        for (let i = 0; i < Math.min(earnedCoin, 4); i++) {
+          worldCoins.push({
+            x: enemy.x + (Math.random() - 0.5) * 25,
+            y: enemy.y + (Math.random() - 0.5) * 25,
+            val: Math.ceil(earnedCoin / Math.min(earnedCoin, 4)),
+            spd: 220 + Math.random() * 140
+          });
+        }
+
+        // 즉시 경험치 획득 실행
+        awardExp(earnedExp);
+      }
+    }
+
+    // 경험치 누적 및 레벨업 함수 (격리 검증형)
+    function awardExp(amount) {
+      const expAdd = Number(amount);
+      if (isNaN(expAdd) || expAdd <= 0) return;
+
+      // 수치 클린업 보장
+      if (typeof player.exp !== 'number' || isNaN(player.exp) || player.exp < 0) player.exp = 0;
+      if (typeof player.maxExp !== 'number' || isNaN(player.maxExp) || player.maxExp <= 0) player.maxExp = 100;
+      if (typeof player.level !== 'number' || isNaN(player.level) || player.level < 1) player.level = 1;
+
+      player.exp += expAdd;
+
+      // 화면에 +EXP 플로팅 텍스트 팝업
+      damageTexts.push({
+        text: `+${expAdd} EXP ✨`,
+        x: player.x + (Math.random() - 0.5) * 30,
+        y: player.y - 28,
+        color: "#fbbf24",
+        scale: 1.25,
+        alpha: 1,
+        life: 0.8
+      });
+
+      // 레벨업 조건 루프 처리
+      let didLevelUp = false;
+      while (player.exp >= player.maxExp) {
+        player.exp -= player.maxExp;
+        player.level += 1;
+        player.maxExp = Math.round(player.maxExp * 1.35);
+        didLevelUp = true;
+      }
+
+      if (didLevelUp) {
+        Sound.play('levelup');
+        const stats = calcStats();
+        player.hp = stats.maxHp; // 레벨업 시 HP 완전 회복
+        damageTexts.push({
+          text: `🎉 LEVEL UP! Lv.${player.level}`,
+          x: player.x,
+          y: player.y - 48,
+          color: "#38bdf8",
+          scale: 1.7,
+          alpha: 1,
+          life: 1.6
+        });
+        checkGrowthEvolution();
+      }
+
+      saveGame();
+      updateHUD();
+    }
+
+    function checkGrowthEvolution() {
+      const { stage, idx } = getCurrentStage();
+      if (idx > state.lastGrowthStage) {
+        state.lastGrowthStage = idx;
+        document.getElementById('evolve-icon').innerText = stage.icon;
+        document.getElementById('evolve-title').innerText = `${stage.title} 진화!`;
+        document.getElementById('evolve-desc').innerText = stage.desc;
+        document.getElementById('evolve-modal').classList.remove('hidden');
+        state.isPaused = true;
+      }
+    }
+
+    document.getElementById('btn-close-evolve').addEventListener('click', () => {
+      document.getElementById('evolve-modal').classList.add('hidden');
+      state.isPaused = false;
+    });
+
+    /* ========================================================
+       9. 몬스터 스폰 시스템
+       ======================================================== */
+    let spawnTimer = 0;
+    const ENEMY_TYPES = [
+      { name: "세균몬", emoji: "🦠", hp: 45, spd: 85, dmg: 10, expVal: 35, coinVal: 6, scoreVal: 50, size: 24 },
+      { name: "먼지괴물", emoji: "👾", hp: 80, spd: 70, dmg: 16, expVal: 60, coinVal: 12, scoreVal: 90, size: 28 },
+      { name: "사탕악마", emoji: "😈", hp: 160, spd: 95, dmg: 24, expVal: 110, coinVal: 24, scoreVal: 180, size: 32 },
+      { name: "충치대마왕(보스)", emoji: "👺", hp: 600, spd: 50, dmg: 40, expVal: 400, coinVal: 80, scoreVal: 600, size: 48, boss: true }
+    ];
+
+    function spawnEnemies(dt) {
+      if (state.isPaused || state.isGameOver) return;
+      spawnTimer += dt;
+
+      const spawnInterval = Math.max(0.6, 2.0 - player.level * 0.05);
+
+      if (spawnTimer >= spawnInterval) {
+        spawnTimer = 0;
+        let typeIdx = 0;
+        const r = Math.random();
+        if (player.level >= 15 && r < 0.12) typeIdx = 3;
+        else if (player.level >= 7 && r < 0.35) typeIdx = 2;
+        else if (player.level >= 3 && r < 0.6) typeIdx = 1;
+
+        const def = ENEMY_TYPES[typeIdx];
+        let ex, ey;
+        if (Math.random() < 0.5) {
+          ex = Math.random() < 0.5 ? -40 : width + 40;
+          ey = Math.random() * height;
+        } else {
+          ex = Math.random() * width;
+          ey = Math.random() < 0.5 ? -40 : height + 40;
+        }
+
+        const hpScale = 1 + (player.level - 1) * 0.25;
+        enemies.push({
+          ...def,
+          hp: Math.round(def.hp * hpScale),
+          maxHp: Math.round(def.hp * hpScale),
+          x: ex, y: ey,
+          dead: false,
+          stunTimer: 0
+        });
+      }
+    }
+
+    /* ========================================================
+       10. 메인 루프 (Delta Time 완전 고정)
+       ======================================================== */
+    let lastTime = 0;
+
+    function gameLoop(now) {
+      if (!lastTime) lastTime = now;
+      const dt = Math.min(0.1, (now - lastTime) / 1000);
+      lastTime = now;
+
+      if (!state.isPaused && !state.isGameOver) updateGame(dt);
+      renderGame();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function updateGame(dt) {
+      const stats = calcStats();
+
+      if (cooldowns.poop > 0) cooldowns.poop = Math.max(0, cooldowns.poop - dt);
+      if (cooldowns.fart > 0) cooldowns.fart = Math.max(0, cooldowns.fart - dt);
+      if (cooldowns.cry > 0) cooldowns.cry = Math.max(0, cooldowns.cry - dt);
+      if (player.attackTimer > 0) player.attackTimer = Math.max(0, player.attackTimer - dt);
+
+      updateCoolText('cool-poop', cooldowns.poop);
+      updateCoolText('cool-fart', cooldowns.fart);
+      updateCoolText('cool-cry', cooldowns.cry);
+
+      if (player.isAttacking) tryShoot();
+      if (stats.hpRegen > 0) player.hp = Math.min(stats.maxHp, player.hp + (stats.hpRegen * dt));
+
+      let moveX = joyVector.x;
+      let moveY = joyVector.y;
+      if (keys['w'] || keys['arrowup']) moveY -= 1;
+      if (keys['s'] || keys['arrowdown']) moveY += 1;
+      if (keys['a'] || keys['arrowleft']) moveX -= 1;
+      if (keys['d'] || keys['arrowright']) moveX += 1;
+
+      const moveLen = Math.hypot(moveX, moveY);
+      if (moveLen > 0.1) {
+        player.isMoving = true;
+        const finalSpeed = (player.baseSpeed + stats.speedBonus);
+        player.x += (moveX / (moveLen > 1 ? moveLen : 1)) * finalSpeed * dt;
+        player.y += (moveY / (moveLen > 1 ? moveLen : 1)) * finalSpeed * dt;
+        player.walkCycle += 10 * dt;
+        player.dirX = moveX / moveLen;
+        player.dirY = moveY / moveLen;
+
+        player.x = Math.max(25, Math.min(width - 25, player.x));
+        player.y = Math.max(65, Math.min(height - 80, player.y));
+      } else {
+        player.isMoving = false;
+      }
+
+      // 코인 자석 흡수
+      for (let i = worldCoins.length - 1; i >= 0; i--) {
+        const c = worldCoins[i];
+        const cdx = player.x - c.x;
+        const cdy = player.y - c.y;
+        const cdist = Math.hypot(cdx, cdy);
+
+        if (cdist < 22) {
+          state.coins = (state.coins || 0) + c.val;
+          Sound.play('coin');
+          saveGame();
+          updateHUD();
+          worldCoins.splice(i, 1);
+        } else {
+          c.x += (cdx / cdist) * c.spd * dt;
+          c.y += (cdy / cdist) * c.spd * dt;
+          c.spd += 250 * dt;
+        }
+      }
+
+      // 발사체 이동 & 몬스터 충돌
+      for (let i = projectiles.length - 1; i >= 0; i--) {
+        const p = projectiles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+
+        for (let j = 0; j < enemies.length; j++) {
+          const en = enemies[j];
+          if (en.dead) continue;
+          if (Math.hypot(en.x - p.x, en.y - p.y) < en.size + p.radius) {
+            applyDamage(en, p.damage, false, null);
+            if (p.pierce <= 0) { p.life = 0; break; } else { p.pierce--; }
+          }
+        }
+
+        if (p.life <= 0 || p.x < 0 || p.x > width || p.y < 0 || p.y > height) {
+          projectiles.splice(i, 1);
+        }
+      }
+
+      // 몬스터 추적 및 사망 몬스터 정리
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const en = enemies[i];
+        if (en.dead) {
+          enemies.splice(i, 1);
+          continue;
+        }
+        if (en.stunTimer > 0) { en.stunTimer -= dt; continue; }
+
+        const dx = player.x - en.x;
+        const dy = player.y - en.y;
+        const d = Math.hypot(dx, dy);
+
+        if (d > 0) {
+          en.x += (dx / d) * en.spd * dt;
+          en.y += (dy / d) * en.spd * dt;
+        }
+
+        if (d < en.size + 18) {
+          let incomingDmg = en.dmg * (1 - stats.dmgReduction) - stats.def;
+          incomingDmg = Math.max(3, incomingDmg);
+          player.hp -= incomingDmg * dt * 2.5;
+
+          if (player.hp <= 0) {
+            if (stats.strollerLevel >= 3 && !player.reviveUsed) {
+              player.reviveUsed = true;
+              player.hp = stats.maxHp * 0.7;
+              Sound.play('levelup');
+              damageTexts.push({ text: "✨ 부활 발동!", x: player.x, y: player.y - 30, color: "#38bdf8", scale: 1.5, alpha: 1, life: 1.2 });
+            } else {
+              gameOver();
+            }
+          }
+        }
+      }
+
+      for (let i = damageTexts.length - 1; i >= 0; i--) {
+        const dtItem = damageTexts[i];
+        dtItem.y -= 40 * dt;
+        dtItem.alpha -= 1.4 * dt;
+        dtItem.life -= dt;
+        if (dtItem.life <= 0 || dtItem.alpha <= 0) damageTexts.splice(i, 1);
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.radius += (pt.maxRadius - pt.radius) * 10 * dt;
+        pt.alpha -= 2.0 * dt;
+        if (pt.alpha <= 0) particles.splice(i, 1);
+      }
+
+      spawnEnemies(dt);
+      updateHUD();
+    }
+
+    function updateCoolText(elementId, seconds) {
+      const el = document.getElementById(elementId);
+      if (seconds > 0) {
+        el.classList.remove('hidden');
+        el.innerText = seconds.toFixed(1) + 's';
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    /* ========================================================
+       11. 캔버스 그래픽 렌더링
+       ======================================================== */
+    function renderGame() {
+      ctx.clearRect(0, 0, width, height);
+
+      // 격자 도트 바닥 패턴
+      ctx.fillStyle = "#fef08a";
+      for (let x = 20; x < width; x += 40) {
+        for (let y = 20; y < height; y += 40) {
+          ctx.beginPath();
+          ctx.arc(x, y, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      const stats = calcStats();
+      const current = getCurrentStage().stage;
+
+      particles.forEach(pt => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        if (pt.type === 'poop-blast') {
+          ctx.fillStyle = "rgba(180, 83, 9, 0.45)";
+          ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.fill();
+        } else if (pt.type === 'fart-cloud') {
+          ctx.fillStyle = "rgba(52, 211, 153, 0.5)";
+          ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.fill();
+        } else if (pt.type === 'cry-wave') {
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.75)";
+          ctx.lineWidth = 6;
+          ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.restore();
+      });
+
+      worldCoins.forEach(c => {
+        ctx.save();
+        ctx.font = "16px sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🪙", c.x, c.y);
+        ctx.restore();
+      });
+
+      projectiles.forEach(p => {
+        ctx.save();
+        ctx.font = `${p.radius * 2}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(p.type, p.x, p.y);
+        ctx.restore();
+      });
+
+      enemies.forEach(en => {
+        ctx.save();
+        if (en.hp < en.maxHp) {
+          const barW = en.size * 1.5;
+          ctx.fillStyle = "rgba(0,0,0,0.4)";
+          ctx.fillRect(en.x - barW / 2, en.y - en.size - 10, barW, 4);
+          ctx.fillStyle = "#ef4444";
+          ctx.fillRect(en.x - barW / 2, en.y - en.size - 10, barW * (Math.max(0, en.hp) / en.maxHp), 4);
+        }
+        if (en.boss) {
+          ctx.beginPath();
+          ctx.arc(en.x, en.y, en.size + 10, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(239, 68, 68, 0.25)";
+          ctx.fill();
+        }
+        ctx.font = `${en.size * 1.5}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(en.emoji, en.x, en.y);
+        ctx.restore();
+      });
+
+      const renderPx = isNaN(player.x) ? width / 2 : player.x;
+      const renderPy = isNaN(player.y) ? height / 2 : player.y;
+
+      ctx.save();
+      ctx.translate(renderPx, renderPy);
+
+      if (stats.aura) {
+        ctx.beginPath(); ctx.arc(0, 0, 34, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(250, 204, 21, 0.35)"; ctx.fill();
+      }
+
+      if (stats.strollerLevel > 0) {
+        ctx.fillStyle = "#64748b"; ctx.fillRect(-18, 12, 36, 6);
+        ctx.beginPath(); ctx.arc(-14, 18, 5, 0, Math.PI*2);
+        ctx.arc(14, 18, 5, 0, Math.PI*2);
+        ctx.fillStyle = "#1e293b"; ctx.fill();
+      }
+
+      const walkBob = Math.sin(player.walkCycle) * 3;
+      const stageIdx = getCurrentStage().idx;
+      const scale = 1 + stageIdx * 0.22;
+      ctx.scale(scale, scale);
+
+      ctx.fillStyle = stats.clothColor;
+      ctx.beginPath(); ctx.arc(0, 2 + walkBob, 15, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = "#ffedd5";
+      ctx.beginPath(); ctx.arc(0, -10 + walkBob, 13, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath(); ctx.arc(-4, -11 + walkBob, 2, 0, Math.PI * 2);
+      ctx.arc(4, -11 + walkBob, 2, 0, Math.PI * 2); ctx.fill();
+
+      if (stageIdx === 0) {
+        ctx.fillStyle = "#fdba74";
+        ctx.beginPath(); ctx.arc(0, -16 + walkBob, 14, Math.PI, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#38bdf8";
+        ctx.beginPath(); ctx.arc(0, -6 + walkBob, 3.5, 0, Math.PI * 2); ctx.fill();
+      } else if (stageIdx === 1) {
+        ctx.fillStyle = "#3b82f6";
+        ctx.fillRect(-12, -22 + walkBob, 24, 7);
+        ctx.beginPath(); ctx.arc(0, -19 + walkBob, 12, Math.PI, Math.PI * 2); ctx.fill();
+      } else if (stageIdx === 2) {
+        ctx.fillStyle = "#78350f";
+        ctx.beginPath(); ctx.arc(0, -18 + walkBob, 14, Math.PI * 0.9, Math.PI * 2.1); ctx.fill();
+      } else {
+        ctx.fillStyle = "#dc2626";
+        ctx.fillRect(-12, 0 + walkBob, 24, 18);
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,0.65)";
+      ctx.font = "bold 11px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`유준이 (${current.name})`, renderPx, renderPy - 36);
+      ctx.restore();
+
+      damageTexts.forEach(dtItem => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, dtItem.alpha);
+        ctx.font = `bold ${Math.round(14 * dtItem.scale)}px sans-serif`;
+        ctx.fillStyle = dtItem.color;
+        ctx.textAlign = "center";
+        ctx.fillText(dtItem.text, dtItem.x, dtItem.y);
+        ctx.restore();
+      });
+    }
+
+    /* ========================================================
+       12. UI 연동 및 실시간 HUD 업데이트
+       ======================================================== */
+    function updateHUD() {
+      const stats = calcStats();
+      const { stage } = getCurrentStage();
+
+      document.getElementById('hud-avatar').innerText = stage.icon;
+      document.getElementById('grow-stage-badge').innerText = stage.name;
+      document.getElementById('level-badge').innerText = `Lv.${player.level}`;
+
+      const currentHp = Math.max(0, isNaN(player.hp) ? stats.maxHp : player.hp);
+      const hpPct = Math.max(0, Math.min(100, (currentHp / stats.maxHp) * 100));
+      document.getElementById('hp-bar').style.width = `${hpPct}%`;
+      document.getElementById('hp-text').innerText = `${Math.ceil(currentHp)}/${stats.maxHp}`;
+
+      // 경험치 바 연동 및 수치 렌더링 (NaN 원천 차단)
+      const currentExp = (typeof player.exp === 'number' && !isNaN(player.exp)) ? player.exp : 0;
+      const targetExp = (typeof player.maxExp === 'number' && !isNaN(player.maxExp) && player.maxExp > 0) ? player.maxExp : 100;
+      const expPct = Math.max(0, Math.min(100, (currentExp / targetExp) * 100));
+      
+      const expBar = document.getElementById('exp-bar');
+      if (expBar) expBar.style.width = `${expPct}%`;
+      document.getElementById('exp-text').innerText = `EXP ${Math.floor(expPct)}% (${currentExp}/${targetExp})`;
+
+      document.getElementById('coin-count').innerText = state.coins || 0;
+      document.getElementById('modal-coin').innerText = state.coins || 0;
+
+      document.getElementById('atk-btn-icon').innerText = stage.atkIcon;
+      document.getElementById('atk-btn-text').innerText = stage.atkName;
+
+      renderEquipSidebar();
+    }
+
+    function renderEquipSidebar() {
+      const container = document.getElementById('equip-slot-container');
+      const countEl = document.getElementById('equip-count');
+      const equippedIds = Object.keys(state.items);
+      countEl.innerText = `${equippedIds.length}/10`;
+
+      if (equippedIds.length === 0) {
+        container.innerHTML = `<div class="text-[9px] text-slate-300 text-center py-2">상점에서 아이템을 구매하면 장착됩니다</div>`;
+        return;
+      }
+
+      container.innerHTML = "";
+      equippedIds.forEach(id => {
+        const itemDef = ITEMS_DATA.find(i => i.id === id);
+        if (!itemDef) return;
+        const tierIdx = state.items[id];
+        const tier = itemDef.tiers[tierIdx];
+
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between bg-slate-800/80 px-2 py-1.5 rounded-lg border border-slate-600/70 active:bg-slate-700 cursor-pointer";
+        row.innerHTML = `
+          <div class="flex items-center gap-1 min-w-0 pr-1">
+            <span class="text-xs shrink-0">${itemDef.icon}</span>
+            <span class="font-bold text-[10px] text-white truncate max-w-[80px]">${tier.name}</span>
+          </div>
+          <span class="text-[9px] bg-amber-400 text-amber-950 font-black px-1 rounded shrink-0">L${tierIdx + 1}</span>
+        `;
+        row.addEventListener('click', (e) => showItemTooltip(e, itemDef, tier, tierIdx));
+        container.appendChild(row);
+      });
+    }
+
+    function showItemTooltip(e, itemDef, tier, tierIdx) {
+      const tt = document.getElementById('item-tooltip');
+      document.getElementById('tt-title').innerHTML = `${itemDef.icon} ${tier.name} <span class="text-amber-400 text-[10px]">(Lv.${tierIdx+1})</span>`;
+      document.getElementById('tt-stat').innerText = `✨ ${tier.desc}`;
+      document.getElementById('tt-type').innerText = `속성: ${itemDef.attr}`;
+
+      tt.style.top = `${Math.min(window.innerHeight - 100, Math.max(80, e.clientY - 20))}px`;
+      tt.style.left = `150px`;
+      tt.classList.remove('hidden');
+
+      setTimeout(() => { tt.classList.add('hidden'); }, 2500);
+    }
+
+    document.getElementById('btn-toggle-equip').addEventListener('click', () => {
+      state.equipDrawerOpen = !state.equipDrawerOpen;
+      const sidebar = document.getElementById('equip-sidebar');
+      const btn = document.getElementById('btn-toggle-equip');
+      if (state.equipDrawerOpen) {
+        sidebar.classList.remove('collapsed');
+        btn.innerHTML = "&lt;";
+      } else {
+        sidebar.classList.add('collapsed');
+        btn.innerHTML = "&gt;";
+      }
+    });
+
+    function buildShopUI() {
+      const list = document.getElementById('shop-item-list');
+      list.innerHTML = "";
+
+      ITEMS_DATA.forEach(item => {
+        const currentTier = state.items[item.id] !== undefined ? state.items[item.id] : -1;
+        const nextTierIdx = currentTier + 1;
+        const isMax = nextTierIdx >= item.tiers.length;
+        const nextTier = !isMax ? item.tiers[nextTierIdx] : item.tiers[item.tiers.length - 1];
+
+        const card = document.createElement('div');
+        card.className = "bg-amber-50/80 border border-amber-200 rounded-2xl p-3 flex items-center justify-between";
+
+        let tierBadges = "";
+        for (let i = 0; i < 3; i++) {
+          if (i <= currentTier) {
+            tierBadges += `<span class="w-4 h-4 rounded-full bg-amber-500 text-white font-black text-[9px] flex items-center justify-center">L${i+1}</span>`;
+          } else {
+            tierBadges += `<span class="w-4 h-4 rounded-full bg-slate-200 text-slate-400 font-bold text-[9px] flex items-center justify-center">${i+1}</span>`;
+          }
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center gap-2.5 min-w-0 pr-2">
+            <div class="text-3xl p-2 bg-white rounded-2xl shadow-sm border border-amber-200 shrink-0">${item.icon}</div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="font-extrabold text-xs text-slate-800">${item.name}</span>
+                <div class="flex gap-0.5">${tierBadges}</div>
+              </div>
+              <div class="text-[10px] text-amber-700 font-medium">${item.attr}</div>
+              <div class="text-[10px] text-slate-500 truncate font-semibold mt-0.5">${isMax ? "최고 등급 달성!" : nextTier.name + " (" + nextTier.desc + ")"}</div>
+            </div>
+          </div>
+          <button class="btn-buy-tier shrink-0 font-black text-xs px-3.5 py-2 rounded-xl shadow-md transition-transform active:scale-95 ${isMax ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : (state.coins >= nextTier.cost ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-slate-200 text-slate-400 cursor-not-allowed')}" ${isMax ? 'disabled' : ''}>
+            ${isMax ? '완료' : `🪙 ${nextTier.cost}`}
+          </button>
+        `;
+
+        const buyBtn = card.querySelector('.btn-buy-tier');
+        if (!isMax) {
+          buyBtn.addEventListener('click', () => {
+            if (state.coins >= nextTier.cost) {
+              state.coins -= nextTier.cost;
+              state.items[item.id] = nextTierIdx;
+              Sound.play('coin');
+              saveGame();
+              buildShopUI();
+              updateHUD();
+            }
+          });
+        }
+
+        list.appendChild(card);
+      });
+    }
+
+    document.getElementById('btn-shop').addEventListener('click', () => {
+      state.isPaused = true;
+      buildShopUI();
+      document.getElementById('shop-modal').classList.remove('hidden');
+    });
+    document.getElementById('btn-close-shop').addEventListener('click', () => {
+      document.getElementById('shop-modal').classList.add('hidden');
+      state.isPaused = false;
+    });
+
+    document.getElementById('btn-rankings').addEventListener('click', () => {
+      state.isPaused = true;
+      showRankings();
+      document.getElementById('rank-modal').classList.remove('hidden');
+    });
+    document.getElementById('btn-close-rank').addEventListener('click', () => {
+      document.getElementById('rank-modal').classList.add('hidden');
+      state.isPaused = false;
+    });
+
+    /* ========================================================
+       13. 랭킹 시스템
+       ======================================================== */
+    function getRankings() {
+      localStorage.removeItem('yujun_rankings_v4');
+      const data = localStorage.getItem('yujun_clean_rankings');
+      return data ? JSON.parse(data) : [];
+    }
+
+    function saveScoreToRankings(newScore) {
+      const list = getRankings();
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+      const { stage } = getCurrentStage();
+
+      list.push({
+        name: state.playerName,
+        score: newScore,
+        level: player.level,
+        stage: stage.name,
+        date: dateStr
+      });
+
+      list.sort((a, b) => b.score - a.score);
+      const top10 = list.slice(0, 10);
+      localStorage.setItem('yujun_clean_rankings', JSON.stringify(top10));
+    }
+
+    function renderStartRankPreview() {
+      const preview = document.getElementById('start-rank-preview');
+      const rankings = getRankings();
+
+      if (rankings.length === 0) {
+        preview.innerHTML = `
+          <div class="text-center py-4 text-[10px] text-slate-400">
+            아직 등록된 랭킹 기록이 없습니다.<br>첫 번째 1등 주인공이 되어보세요!
+          </div>
+        `;
+        return;
+      }
+
+      preview.innerHTML = "";
+      rankings.slice(0, 5).forEach((r, idx) => {
+        const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `${idx + 1}위`));
+        const item = document.createElement('div');
+        item.className = "flex items-center justify-between bg-amber-50 px-2 py-1.5 rounded-xl border border-amber-200/80 text-[10px]";
+        item.innerHTML = `
+          <div class="flex items-center gap-1.5 min-w-0 pr-1">
+            <span class="font-black text-xs shrink-0 w-4 text-center">${medal}</span>
+            <span class="font-bold text-slate-700 truncate max-w-[85px]">${r.name}</span>
+            <span class="text-[9px] text-amber-700 font-semibold shrink-0">${r.stage}</span>
+          </div>
+          <span class="font-black text-amber-600 shrink-0">${r.score.toLocaleString()} P</span>
+        `;
+        preview.appendChild(item);
+      });
+    }
+
+    function showRankings() {
+      const listContainer = document.getElementById('rank-list');
+      const rankings = getRankings();
+
+      if (rankings.length === 0) {
+        listContainer.innerHTML = `
+          <div class="text-center py-10">
+            <div class="text-4xl mb-2">🏆</div>
+            <div class="text-xs font-bold text-slate-700">등록된 랭킹 기록이 없습니다.</div>
+            <div class="text-[10px] text-slate-400 mt-1">게임을 플레이하고 첫 번째 명예의 전당 주인공이 되어보세요!</div>
+          </div>
+        `;
+        return;
+      }
+
+      listContainer.innerHTML = "";
+      rankings.forEach((r, idx) => {
+        const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `${idx + 1}위`));
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between bg-amber-50/80 p-2.5 rounded-2xl border border-amber-200 text-xs";
+        row.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="font-black text-sm w-7 text-center">${medal}</span>
+            <div>
+              <div class="font-black text-slate-800">${r.name}</div>
+              <div class="text-[9px] text-slate-400 font-semibold">${r.stage} (Lv.${r.level}) · ${r.date}</div>
+            </div>
+          </div>
+          <span class="font-black text-amber-600 text-sm">${r.score.toLocaleString()} P</span>
+        `;
+        listContainer.appendChild(row);
+      });
+    }
+
+    /* ========================================================
+       14. 게임 오버 & 단일 링크 카카오톡 공유
+       ======================================================== */
+    function gameOver() {
+      state.isGameOver = true;
+      state.isPaused = true;
+      saveScoreToRankings(state.score);
+
+      const { stage } = getCurrentStage();
+      document.getElementById('over-stage-text').innerText = `${state.playerName} 님의 유준이는 [${stage.name} Lv.${player.level}]까지 도달했습니다!`;
+      document.getElementById('final-score').innerText = `${state.score.toLocaleString()} P`;
+      document.getElementById('final-stats').innerText = `처치한 악당: ${state.kills}마리 | 모은 코인: ${state.coins}개`;
+
+      document.getElementById('gameover-modal').classList.remove('hidden');
+    }
+
+    document.getElementById('btn-kakao-share').addEventListener('click', async () => {
+      const shareUrl = "https://xxhubzz.github.io/yujun/";
+      const shareText = `[유준이 키우기]\n${state.playerName} 님이 유준이를 키워 최종 점수 ${state.score.toLocaleString()}P를 달성했습니다!\n지금 링크를 눌러 1위 기록에 도전해보세요!\n${shareUrl}`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: '유준이 키우기',
+            text: shareText
+          });
+        } catch(e) {}
+      } else {
+        const tempInput = document.createElement('textarea');
+        tempInput.value = shareText;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        alert("게임 결과와 웹 링크가 복사되었습니다!\n카카오톡 채팅방에 [붙여넣기] 해주세요!");
+      }
+    });
+
+    document.getElementById('btn-restart').addEventListener('click', () => {
+      location.reload();
+    });
+
+    /* ========================================================
+       15. 세이브 복구 & 시작 처리 (오염 데이터 완전 제거)
+       ======================================================== */
+    function saveGame() {
+      try {
+        localStorage.setItem('yujun_save_v1', JSON.stringify({
+          coins: state.coins,
+          items: state.items,
+          level: (typeof player.level === 'number' && !isNaN(player.level)) ? player.level : 1,
+          exp: (typeof player.exp === 'number' && !isNaN(player.exp)) ? player.exp : 0,
+          maxExp: (typeof player.maxExp === 'number' && !isNaN(player.maxExp) && player.maxExp > 0) ? player.maxExp : 100,
+          playerName: state.playerName
+        }));
+      } catch(e) {}
+    }
+
+    function loadGame() {
+      try {
+        const raw = localStorage.getItem('yujun_save_v1');
+        if (raw) {
+          const d = JSON.parse(raw);
+          if (d.coins !== undefined && typeof d.coins === 'number' && !isNaN(d.coins)) state.coins = d.coins;
+          if (d.items && typeof d.items === 'object') state.items = d.items;
+          if (d.level !== undefined && typeof d.level === 'number' && !isNaN(d.level) && d.level >= 1) player.level = d.level;
+          if (d.exp !== undefined && typeof d.exp === 'number' && !isNaN(d.exp) && d.exp >= 0) player.exp = d.exp;
+          if (d.maxExp !== undefined && typeof d.maxExp === 'number' && !isNaN(d.maxExp) && d.maxExp > 0) player.maxExp = d.maxExp;
+          if (d.playerName) state.playerName = d.playerName;
+        }
+      } catch(e) {}
+
+      // 수치 오염 원천 격리
+      if (typeof player.level !== 'number' || isNaN(player.level) || player.level < 1) player.level = 1;
+      if (typeof player.exp !== 'number' || isNaN(player.exp) || player.exp < 0) player.exp = 0;
+      if (typeof player.maxExp !== 'number' || isNaN(player.maxExp) || player.maxExp <= 0) player.maxExp = 100;
+    }
+
+    document.getElementById('btn-start-game').addEventListener('click', () => {
+      const nameInput = document.getElementById('player-nickname-input').value.trim();
+      state.playerName = nameInput.length > 0 ? nameInput : "익명의 수호자";
+      document.getElementById('player-name-display').innerText = state.playerName;
+
+      Sound.init();
+      document.getElementById('start-modal').classList.add('hidden');
+      state.isPaused = false;
+      saveGame();
+      updateHUD();
+      resize();
+    });
+
+    loadGame();
+    renderStartRankPreview();
+    updateHUD();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
+```
