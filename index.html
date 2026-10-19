@@ -107,7 +107,7 @@
 
   <canvas id="game-canvas"></canvas>
 
-  <!-- 보스 등장 경고 배너 -->
+  <!-- 보스 경고 배너 -->
   <div id="boss-warning-banner" class="hud-layer top-16 left-0 right-0 z-30 hidden flex justify-center">
     <div class="boss-alert bg-rose-600/95 border-2 border-amber-300 text-white font-black text-xs md:text-sm px-4 py-2 rounded-2xl shadow-2xl flex items-center gap-2">
       <span class="text-base">⚠️</span>
@@ -125,7 +125,6 @@
           <div class="flex items-center gap-1.5 leading-tight mb-1">
             <span id="player-name-display" class="font-extrabold text-slate-800 text-sm truncate">유준이</span>
             <span id="grow-stage-badge" class="text-[10px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-md shrink-0">신생아</span>
-            <!-- 나이 표시 -->
             <span id="level-badge" class="text-xs font-black text-amber-600 shrink-0">0세</span>
           </div>
           
@@ -144,6 +143,10 @@
       </div>
 
       <div class="flex items-center gap-1.5 shrink-0">
+        <!-- 보류된 진로 결정 버튼 (돈 더 모으기 선택 시 노출) -->
+        <button id="btn-pending-decision" class="interactive hidden bg-rose-500 text-white font-black text-xs px-2.5 py-2 rounded-2xl shadow-md active:scale-95 animate-pulse flex items-center gap-1 shrink-0">
+          🔔 진로선택
+        </button>
         <div class="bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-2xl shadow-md border border-amber-200 flex items-center gap-1 shrink-0">
           <span class="text-base">🪙</span>
           <span id="coin-count" class="font-black text-slate-800 text-sm tracking-tight">0</span>
@@ -157,7 +160,7 @@
       </div>
     </div>
 
-    <!-- 현재 인생 진로 요약 배너 -->
+    <!-- 현재 진로 요약 배너 -->
     <div id="passive-skills-bar" class="flex gap-1.5 justify-center max-w-md mx-auto pointer-events-none"></div>
   </div>
 
@@ -214,7 +217,6 @@
         <div id="cool-cry" class="absolute inset-0 bg-black/60 rounded-2xl hidden flex items-center justify-center font-black text-xs text-white">0s</div>
       </button>
 
-      <!-- 기본 평타 (나이에 따라 투사체와 명칭 진화) -->
       <button id="btn-attack" class="skill-btn bg-gradient-to-tr from-pink-500 to-rose-400 text-white p-1.5 rounded-2xl shadow-xl border-2 border-white flex flex-col items-center justify-center w-16 h-16">
         <span id="atk-btn-icon" class="text-xl">🍼</span>
         <span id="atk-btn-text" class="text-[8px] font-black mt-0.5 leading-none">분유던지기</span>
@@ -254,7 +256,7 @@
     </div>
   </div>
 
-  <!-- 첫 화면 모달 (4위/5위 줄바꿈 해결) -->
+  <!-- 첫 화면 모달 -->
   <div id="start-modal" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-5 border-4 border-amber-300 text-center flex flex-col max-h-[90vh] overflow-hidden">
       <div class="text-4xl mb-1">👶</div>
@@ -280,17 +282,22 @@
     </div>
   </div>
 
-  <!-- 나이별 인생 진로 선택 모달창 -->
+  <!-- 나이별 인생 진로 선택 모달창 (돈 더 모으기 버튼 추가) -->
   <div id="life-choice-modal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-5 border-4 border-amber-400 text-center flex flex-col max-h-[88vh] overflow-hidden">
       <div id="life-modal-icon" class="text-4xl mb-1">🏫</div>
       <h3 id="life-modal-age" class="text-xs font-black text-amber-500 tracking-wider">8세 도달!</h3>
       <h2 id="life-modal-title" class="text-base font-black text-slate-800 mt-0.5">인생의 갈림길: 초등학교 입학</h2>
-      <p id="life-modal-desc" class="text-[11px] text-slate-500 mt-1 mb-3">어떤 진로를 선택하시겠습니까? 좋은 선택일수록 비용이 필요합니다.</p>
+      <p id="life-modal-desc" class="text-[11px] text-slate-500 mt-1 mb-2">원하는 진로를 선택하거나, 돈을 더 모으고 결정할 수 있습니다.</p>
       
       <div id="life-choice-list" class="allow-scroll flex-1 overflow-y-auto space-y-2 pr-0.5 text-left pb-2">
-        <!-- 진로 선택지 동적 주입 -->
+        <!-- 진로 선택지 -->
       </div>
+
+      <!-- 돈 더 모으기 버튼 -->
+      <button id="btn-postpone-decision" class="w-full mt-2 bg-slate-800 hover:bg-slate-900 text-amber-300 font-black py-2.5 rounded-2xl shadow-md active:scale-95 transition-transform text-xs flex items-center justify-center gap-1">
+        <span>💰</span> 결정을 미루고 돈 더 모으기 (파밍 계속)
+      </button>
     </div>
   </div>
 
@@ -412,7 +419,6 @@
       return Math.round(item.baseCost * Math.pow(item.costScale, level));
     }
 
-    // 나이별 단계 정의 & 평타 투사체 진화
     const LIFE_STAGES = [
       { minAge: 0, maxAge: 7, name: "영유아", icon: "👶", atkName: "분유던지기", atkIcon: "🍼" },
       { minAge: 8, maxAge: 13, name: "초등학생", icon: "🧒", atkName: "지우개/연필", atkIcon: "✏️" },
@@ -424,7 +430,6 @@
       { minAge: 25, maxAge: 99, name: "직장인", icon: "💼", atkName: "사원증빔", atkIcon: "💳" }
     ];
 
-    // 연령별 인생 분기 이벤트 정의
     const LIFE_EVENTS = {
       8: {
         icon: "🏫", ageStr: "8세 초등학교 입학", title: "인생의 첫 학교 선택",
@@ -492,14 +497,15 @@
       isPaused: true,
       isGameOver: false,
       equipDrawerOpen: true,
-      selectedLifePerks: [] // 선택한 인생 진로
+      selectedLifePerks: [],
+      pendingEventAge: null // 보류된 나이 이벤트 기억
     };
 
     const player = {
       x: WORLD_WIDTH / 2,
       y: WORLD_HEIGHT / 2,
       baseSpeed: 195,
-      age: 0, // 레벨 대신 나이(Age)
+      age: 0,
       exp: 0, maxExp: 100,
       hp: 150, maxHp: 150,
       dirX: 0, dirY: -1,
@@ -552,7 +558,6 @@
 
     function calcStats() {
       const getL = (id) => state.itemLevels[id] || 0;
-      const current = getCurrentStage();
 
       let stats = {
         maxHp: 150 + player.age * 25 + getL('bed') * 55,
@@ -573,13 +578,10 @@
         clothColor: "#fde047"
       };
 
-      // 예비군 전역 보너스
       if (state.selectedLifePerks.some(p => p.perk === "예비군각성")) {
         stats.atk *= 1.3;
         stats.maxHp *= 1.3;
       }
-
-      // 칼퇴근 부스터
       if (state.selectedLifePerks.some(p => p.perk === "칼퇴근")) {
         stats.speedBonus += 35;
       }
@@ -763,7 +765,6 @@
         life: 1.6
       });
 
-      // 나이가 들수록 평타 다발 사격
       if (player.age >= 14) {
         projectiles.push(createProj(angle - 0.22));
         projectiles.push(createProj(angle));
@@ -922,7 +923,6 @@
       }
     }
 
-    // 경험치 획득 시 1살씩 나이 성장 (Life Growth)
     function gainExp(amount) {
       if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) return;
       
@@ -940,7 +940,7 @@
 
       while (player.exp >= player.maxExp) {
         player.exp -= player.maxExp;
-        player.age++; // 1살 증가!
+        player.age++;
         player.maxExp = Math.round(player.maxExp * 1.28);
 
         Sound.play('levelup');
@@ -955,14 +955,13 @@
           alpha: 1, life: 1.8
         });
 
-        // 특정 나이 인생 진로 선택 이벤트 발동 체크
         checkLifeEvent(player.age);
       }
 
       updateHUD();
     }
 
-    // 인생 진로 선택 모달 띄우기
+    // 인생 진로 선택 모달 띄우기 (보류 지원)
     function checkLifeEvent(age) {
       const eventDef = LIFE_EVENTS[age];
       if (!eventDef) return;
@@ -971,6 +970,7 @@
       state.isPaused = true;
       player.isMoving = false;
       player.isAttacking = false;
+      state.pendingEventAge = age;
 
       document.getElementById('life-modal-icon').innerText = eventDef.icon;
       document.getElementById('life-modal-age').innerText = `${age}세 도달!`;
@@ -998,6 +998,8 @@
           itemCard.querySelector('button').addEventListener('click', () => {
             state.coins -= ch.cost;
             state.selectedLifePerks.push(ch);
+            state.pendingEventAge = null;
+            document.getElementById('btn-pending-decision').classList.add('hidden');
             document.getElementById('life-choice-modal').classList.add('hidden');
             state.isPaused = false;
             updateHUD();
@@ -1009,6 +1011,22 @@
 
       document.getElementById('life-choice-modal').classList.remove('hidden');
     }
+
+    // "돈 더 모으기" 버튼 클릭 시
+    document.getElementById('btn-postpone-decision').addEventListener('click', () => {
+      document.getElementById('life-choice-modal').classList.add('hidden');
+      document.getElementById('btn-pending-decision').classList.remove('hidden');
+      state.isPaused = false;
+      resetJoystick();
+    });
+
+    // 상단 "🔔 진로선택" 버튼 클릭 시 모달 다시 열기
+    document.getElementById('btn-pending-decision').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (state.pendingEventAge) {
+        checkLifeEvent(state.pendingEventAge);
+      }
+    });
 
     let bossWarningTimeout = null;
     function triggerBossWarning(name) {
@@ -1025,7 +1043,7 @@
     }
 
     /* ========================================================
-       몬스터 스폰 (나이 기반 난이도 스케일링)
+       몬스터 스폰
        ======================================================== */
     let spawnTimer = 0;
     const ENEMY_TYPES = [
@@ -1246,6 +1264,23 @@
           }
         }
 
+        if (en.rangedDragon) {
+          en.shootCooldown -= dt;
+          if (en.shootCooldown <= 0) {
+            en.shootCooldown = 2.4;
+            Sound.play('boss_shoot');
+            const fang = Math.atan2(player.y - en.y, player.x - en.x);
+            bossProjectiles.push({
+              x: en.x, y: en.y,
+              vx: Math.cos(fang) * 230,
+              vy: Math.sin(fang) * 230,
+              damage: en.dmg * 0.8,
+              radius: 12,
+              life: 2.5
+            });
+          }
+        }
+
         if (d < en.size + 18) {
           let incomingDmg = en.dmg * (1 - stats.dmgReduction) - stats.def;
           incomingDmg = Math.max(4, incomingDmg);
@@ -1303,7 +1338,6 @@
       const camY = isNaN(camera.y) ? 0 : camera.y;
       ctx.translate(-camX, -camY);
 
-      // 월드 도트
       ctx.fillStyle = "#fef08a";
       const startX = Math.max(0, Math.floor(camX / 40) * 40);
       const endX = Math.min(WORLD_WIDTH, startX + width + 80);
@@ -1318,7 +1352,6 @@
         }
       }
 
-      // 맵 테두리
       ctx.strokeStyle = "rgba(239, 68, 68, 0.85)";
       ctx.lineWidth = 14;
       ctx.strokeRect(7, 7, WORLD_WIDTH - 14, WORLD_HEIGHT - 14);
@@ -1434,7 +1467,6 @@
         ctx.restore();
       });
 
-      // 유준이 본체 렌더링
       ctx.save();
       ctx.translate(player.x, player.y);
 
@@ -1454,7 +1486,6 @@
       ctx.arc(4, -11 + walkBob, 2, 0, Math.PI * 2);
       ctx.fill();
 
-      // 나이에 따른 헤어스타일 및 모자 진화
       if (player.age < 8) {
         ctx.fillStyle = "#fdba74";
         ctx.beginPath(); ctx.arc(0, -16 + walkBob, 14, Math.PI, Math.PI * 2); ctx.fill();
@@ -1467,10 +1498,10 @@
       } else if (player.age < 21) {
         ctx.fillStyle = "#78350f";
         ctx.beginPath(); ctx.arc(0, -18 + walkBob, 14, Math.PI * 0.9, Math.PI * 2.1); ctx.fill();
-      } else if (player.age === 21) { // 군인 베레모
+      } else if (player.age === 21) {
         ctx.fillStyle = "#1e3a1e";
         ctx.beginPath(); ctx.arc(0, -20 + walkBob, 13, Math.PI, Math.PI * 2); ctx.fill();
-      } else { // 직장인 넥타이
+      } else {
         ctx.fillStyle = "#3b82f6";
         ctx.beginPath();
         ctx.moveTo(0, 3 + walkBob);
@@ -1548,7 +1579,6 @@
       document.getElementById('icon-skill-cry').innerText = cry.icon;
       document.getElementById('dmg-skill-cry').innerText = `ATK ${Math.round(baseAtk * cry.pwr)}`;
 
-      // 선택한 진로 요약 표시
       const skillBar = document.getElementById('passive-skills-bar');
       skillBar.innerHTML = "";
       state.selectedLifePerks.forEach(p => {
@@ -1692,7 +1722,7 @@
     });
 
     /* ========================================================
-       실시간 점수 연동 & 4위/5위 줄바꿈 완전 수정
+       실시간 점수 연동 & 4위/5위 줄바꿈 수정
        ======================================================== */
     function getLocalRankings() {
       const data = localStorage.getItem('yujun_clean_rankings');
@@ -1748,7 +1778,6 @@
       saveLocalRankings(list.slice(0, 15));
     }
 
-    // 4위, 5위 텍스트 분리 깨짐 방지 렌더링
     function renderStartRankPreview() {
       const preview = document.getElementById('start-rank-preview');
       const rankings = getLocalRankings();
@@ -1801,7 +1830,7 @@
         row.className = "flex items-center justify-between bg-amber-50/80 p-2.5 rounded-2xl border border-amber-200 text-xs";
         row.innerHTML = `
           <div class="flex items-center gap-2">
-            <span class="font-black text-sm w-8 text-center shrink-0 whitespace-nowrap">${medal}</span>
+            <span class="font-black text-sm w-7 text-center shrink-0 whitespace-nowrap">${medal}</span>
             <div>
               <div class="font-black text-slate-800">${r.name}</div>
               <div class="text-[9px] text-slate-400 font-semibold">${r.stage} (${r.age !== undefined ? r.age : r.level}세) · ${r.date}</div>
@@ -1814,7 +1843,7 @@
     }
 
     /* ========================================================
-       게임 오버 (최종 나이와 단계 완벽 보존 후 환생)
+       게임 오버
        ======================================================== */
     function gameOver() {
       state.isGameOver = true;
@@ -1835,7 +1864,6 @@
 
       localStorage.setItem('yujun_remembered_name', state.playerName);
 
-      // 환생: 0세 신생아로 초기화
       player.age = 0;
       player.exp = 0;
       player.maxExp = 100;
@@ -1844,6 +1872,7 @@
       state.coins = 0;
       state.itemLevels = {};
       state.selectedLifePerks = [];
+      state.pendingEventAge = null;
 
       document.getElementById('gameover-modal').classList.remove('hidden');
     }
@@ -1891,7 +1920,6 @@
       }
     }
 
-    // 초기화
     initNickname();
     parseSharedScoreFromURL();
     renderStartRankPreview();
