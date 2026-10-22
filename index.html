@@ -17,6 +17,7 @@
             color: #ffffff;
             font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
             height: 100vh;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -37,14 +38,15 @@
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
             border: 2px solid #3b82f6;
             border-radius: 8px;
-            padding: 4px 10px;
+            padding: 4px 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            flex-shrink: 0;
         }
         .team-score {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             display: flex;
             flex-direction: column;
@@ -52,19 +54,19 @@
         }
         .team-name {
             color: #93c5fd;
-            font-size: 10px;
+            font-size: 9px;
             margin-bottom: 1px;
         }
         .score-num {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 900;
         }
         .count-status {
             text-align: center;
             font-size: 10px;
             background: #020617;
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 2px 6px;
+            border-radius: 4px;
             border: 1px solid #334155;
         }
         .count-dots {
@@ -73,20 +75,21 @@
             letter-spacing: 1px;
         }
 
-        /* 3D 구장 뷰 (한 화면에 밀착) */
+        /* 3D 구장 뷰 (모바일 잘림 방지를 위해 높이 축소 고정) */
         .stadium-view {
             position: relative;
             background: linear-gradient(180deg, #064e3b 0%, #022c22 60%, #011b15 100%);
             border: 2px solid #059669;
-            border-radius: 10px;
-            height: 240px;
+            border-radius: 8px;
+            height: 200px;
+            flex-shrink: 0;
             margin: 2px 0;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-end;
-            box-shadow: inset 0 0 25px rgba(0,0,0,0.8);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
         }
         .perspective-ground {
             position: absolute;
@@ -101,62 +104,57 @@
         /* 전광판 구속 강조 팝업 */
         .radar-popup {
             position: absolute;
-            top: 8%;
+            top: 6%;
             background: rgba(15, 23, 42, 0.95);
             border: 2px solid #ef4444;
-            padding: 4px 14px;
+            padding: 2px 10px;
             border-radius: 6px;
             text-align: center;
             display: none;
             z-index: 40;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.7);
-            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes popIn {
-            0% { transform: scale(0.4); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.7);
         }
         .radar-speed {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 900;
             color: #ef4444;
         }
         .radar-result {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             color: #38bdf8;
         }
 
-        /* 우타자 (이화용: 우측에 배치, 통통한 체형 + 안경 + 헬멧) */
+        /* 우타자 이화용 */
         .batter-container {
             position: absolute;
             top: 10%;
-            right: 28%; /* 우타자석 배치 */
+            right: 28%;
             display: flex;
             flex-direction: column;
             align-items: center;
             z-index: 10;
         }
         .batter-helmet {
-            width: 34px;
-            height: 20px;
+            width: 30px;
+            height: 18px;
             background: #b91c1c;
-            border-radius: 18px 18px 4px 4px;
+            border-radius: 15px 15px 4px 4px;
             position: relative;
         }
         .batter-helmet::after {
             content: '';
             position: absolute;
             bottom: 2px;
-            left: -5px;
-            width: 12px;
-            height: 5px;
+            left: -4px;
+            width: 10px;
+            height: 4px;
             background: #991b1b;
-            border-radius: 3px;
+            border-radius: 2px;
         }
         .batter-head {
-            width: 30px;
-            height: 26px;
+            width: 26px;
+            height: 22px;
             background: #fde047;
             border-radius: 50%;
             position: relative;
@@ -165,28 +163,28 @@
             justify-content: center;
         }
         .batter-glasses {
-            width: 22px;
-            height: 8px;
+            width: 18px;
+            height: 7px;
             border: 2px solid #0f172a;
             border-radius: 2px;
             background: rgba(255,255,255,0.6);
         }
         .batter-body {
-            width: 68px;
-            height: 64px;
+            width: 60px;
+            height: 56px;
             background: linear-gradient(135deg, #f97316, #c2410c);
-            border-radius: 34px 34px 20px 20px;
+            border-radius: 30px 30px 18px 18px;
             position: relative;
-            box-shadow: 0 6px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
             display: flex;
             justify-content: center;
         }
         .batter-bat {
             position: absolute;
-            left: -24px; /* 우타자 배트 위치 */
-            top: 8px;
-            width: 9px;
-            height: 68px;
+            left: -20px;
+            top: 6px;
+            width: 8px;
+            height: 58px;
             background: linear-gradient(90deg, #d4d4d8, #71717a);
             border-radius: 4px;
             transform: rotate(20deg);
@@ -194,21 +192,20 @@
             transition: transform 0.08s ease-in-out;
         }
         .batter-container.swinging .batter-bat {
-            transform: rotate(110deg) translateY(5px) translateX(15px);
+            transform: rotate(110deg) translateY(4px) translateX(12px);
         }
 
-        /* 3D 스트라이크존 및 홈플레이트 */
+        /* 스트라이크존 및 홈플레이트 */
         .strike-zone-container {
             position: absolute;
-            top: 30%;
-            width: 105px;
-            height: 105px;
+            top: 28%;
+            width: 90px;
+            height: 90px;
             border: 2px solid rgba(255, 255, 255, 0.6);
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
             background: rgba(0, 0, 0, 0.25);
-            box-shadow: 0 0 12px rgba(52, 211, 153, 0.3);
             border-radius: 4px;
         }
         .zone-cell {
@@ -216,20 +213,19 @@
         }
         .home-plate {
             position: absolute;
-            bottom: 8px;
-            width: 34px;
-            height: 18px;
+            bottom: 6px;
+            width: 30px;
+            height: 16px;
             background: #f8fafc;
             clip-path: polygon(50% 0%, 100% 35%, 100% 100%, 0% 100%, 0% 35%);
-            box-shadow: 0 3px 5px rgba(0,0,0,0.6);
         }
         .ball {
             position: absolute;
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             background: radial-gradient(circle at 30% 30%, #ffffff 0%, #cbd5e1 60%, #64748b 100%);
             border-radius: 50%;
-            box-shadow: 0 0 8px #ffffff, 0 3px 5px rgba(0,0,0,0.5);
+            box-shadow: 0 0 6px #ffffff;
             display: none;
             z-index: 30;
         }
@@ -241,19 +237,22 @@
             border-radius: 6px;
             padding: 4px;
             text-align: center;
-            font-size: 11px;
+            font-size: 10px;
             color: #cbd5e1;
-            min-height: 24px;
+            min-height: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
 
-        /* 컨트롤러 (스크롤 없이 4개 구종 모두 한 화면에 노출) */
+        /* 컨트롤러 패널 (화면 안에 반드시 보이도록 설정) */
         .controls-panel {
             display: flex;
             flex-direction: column;
             gap: 3px;
+            flex-shrink: 0;
+            padding-bottom: 4px;
         }
         .focus-selector {
             display: flex;
@@ -279,7 +278,7 @@
 
         .pitch-buttons {
             display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4개 구종 한 줄 배치로 화면 안에 완벽 수납 */
+            grid-template-columns: repeat(4, 1fr);
             gap: 4px;
         }
         .pitch-btn {
@@ -294,7 +293,6 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            transition: all 0.1s;
         }
         .pitch-btn:active {
             transform: scale(0.95);
@@ -379,7 +377,7 @@
     </div>
 
     <script>
-        let isBottomInning = true; // true: 조용훈 투수 / 이화용 타자, false: 이화용 투수 / 조용훈 타자
+        let isBottomInning = true;
         let currentFocus = 'corner';
         let isActionActive = false;
         let strikes = 0;
@@ -405,7 +403,6 @@
             }
         }
 
-        // [조용훈 투수 시점]
         function throwPitchAsYongHoon(type) {
             const messageEl = document.getElementById('message');
             const radarPopup = document.getElementById('radar-popup');
@@ -418,25 +415,25 @@
             messageEl.innerText = "조용훈 투수 와인드업! 공이 날아갑니다.";
 
             let speed = 0;
-            let startX = 180, endX = 180, startY = 300, endY = 125;
+            let startX = 180, endX = 180, startY = 260, endY = 110;
 
             if (type === 'fastball') {
-                speed = (158 + Math.random() * 4).toFixed(1); // 158~162
-                endX += (currentFocus === 'corner' ? (Math.random() > 0.5 ? 40 : -40) : (Math.random() * 15 - 7));
-                endY += (currentFocus === 'corner' ? (Math.random() > 0.5 ? 40 : -40) : (Math.random() * 15 - 7));
+                speed = (158 + Math.random() * 4).toFixed(1);
+                endX += (currentFocus === 'corner' ? (Math.random() > 0.5 ? 35 : -35) : (Math.random() * 12 - 6));
+                endY += (currentFocus === 'corner' ? (Math.random() > 0.5 ? 35 : -35) : (Math.random() * 12 - 6));
             } else if (type === 'slider') {
-                speed = (142 + Math.random() * 3).toFixed(1); // 142~145
-                endX += 45; endY += 15;
+                speed = (142 + Math.random() * 3).toFixed(1);
+                endX += 40; endY += 12;
             } else if (type === 'curve') {
-                speed = (138 + Math.random() * 2).toFixed(1); // 138~140
-                endX += (Math.random() * 30 - 15); endY += 50;
+                speed = (138 + Math.random() * 2).toFixed(1);
+                endX += (Math.random() * 25 - 12); endY += 45;
             } else if (type === 'forkball') {
-                speed = (130 + Math.random() * 12).toFixed(1); // 130~142
-                endX += (Math.random() * 25 - 12); endY += 65;
+                speed = (130 + Math.random() * 12).toFixed(1);
+                endX += (Math.random() * 20 - 10); endY += 55;
             }
 
-            animateBall(startX, startY, endX, endY, 300, type, () => {
-                let isStrike = (endX >= 135 && endX <= 215 && endY >= 90 && endY <= 170);
+            animateBall(startX, startY, endX, endY, 280, type, () => {
+                let isStrike = (endX >= 125 && endX <= 205 && endY >= 75 && endY <= 155);
                 let resultText = "";
 
                 let hitChance = Math.random();
@@ -445,10 +442,10 @@
                     resultText = "이화용 타자 헛스윙!";
                     strikes++;
                     batterContainer.classList.add('swinging');
-                    setTimeout(() => batterContainer.classList.remove('swinging'), 220);
+                    setTimeout(() => batterContainer.classList.remove('swinging'), 200);
                 } else if (hitChance < 0.55 && isStrike) {
                     batterContainer.classList.add('swinging');
-                    setTimeout(() => batterContainer.classList.remove('swinging'), 220);
+                    setTimeout(() => batterContainer.classList.remove('swinging'), 200);
                     resultText = Math.random() > 0.5 ? "빗맞은 파울 타구!" : "내야 땅볼 아웃!";
                     if (resultText.includes("땅볼")) outs++;
                 } else {
@@ -465,7 +462,6 @@
             });
         }
 
-        // [이화용 투수 / 조용훈 타자 시점 (공수교대)]
         function batAsYongHoon(type) {
             const messageEl = document.getElementById('message');
             const radarPopup = document.getElementById('radar-popup');
@@ -476,28 +472,21 @@
             radarPopup.style.display = 'none';
             messageEl.innerText = "이화용 투수 투구! 조용훈 타자 타격 준비!";
 
-            let speed = 0;
-            if (type === 'fastball' || type === 'slider') {
-                speed = (80 + Math.random() * 5).toFixed(1); // 80~85km/h 직구/슬라이더
-            } else {
-                speed = (60 + Math.random() * 5).toFixed(1); // 60~65km/h 커브/포크
-            }
+            let speed = (type === 'fastball' || type === 'slider') ? (80 + Math.random() * 5).toFixed(1) : (60 + Math.random() * 5).toFixed(1);
+            let startX = 180, endX = 180, startY = 260, endY = 110;
 
-            let startX = 180, endX = 180, startY = 300, endY = 130;
-
-            animateBall(startX, startY, endX, endY, 450, type, () => {
-                // 조용훈 타자: 치면 무조건 홈런!
+            animateBall(startX, startY, endX, endY, 400, type, () => {
                 homeScore++;
                 displaySpeed.innerText = speed + " km/h";
-                displayResult.innerText = "💥 통타! 초대형 홈런!! (HOME RUN)";
+                displayResult.innerText = "💥 통타! 초대형 홈런!!";
                 radarPopup.style.display = 'block';
-                messageEl.innerText = `[구속 ${speed}km/h] 조용훈 타자 시원한 투런 홈런 폭발!`;
+                messageEl.innerText = `[구속 ${speed}km/h] 조용훈 타자 시원한 홈런 폭발!`;
 
                 setTimeout(() => {
                     updateScoreboard();
                     ball.style.display = 'none';
                     isActionActive = false;
-                }, 1500);
+                }, 1400);
             });
         }
 
@@ -515,8 +504,8 @@
                 let curY = sy + (ey - sy) * progress;
                 let curScale = 0.3 + 0.9 * progress;
 
-                if (type === 'slider') curX += Math.sin(progress * Math.PI) * 25;
-                if (type === 'curve') curY -= Math.sin(progress * Math.PI) * 20;
+                if (type === 'slider') curX += Math.sin(progress * Math.PI) * 20;
+                if (type === 'curve') curY -= Math.sin(progress * Math.PI) * 15;
 
                 ball.style.left = curX + 'px';
                 ball.style.top = curY + 'px';
@@ -550,7 +539,7 @@
                 updateScoreboard();
                 document.getElementById('ball').style.display = 'none';
                 isActionActive = false;
-            }, 1200);
+            }, 1100);
         }
 
         function switchInning() {
@@ -576,7 +565,7 @@
                 pLabel.innerText = "P: 이화용";
                 bLabel.innerText = "B: 조용훈";
                 inningTitle.innerText = "9회초 [조용훈 타격]";
-                focusArea.style.display = 'none'; // 타격 시엔 제구 포커스 숨김
+                focusArea.style.display = 'none';
                 document.getElementById('btn-1-name').innerText = "직구치기";
                 document.getElementById('btn-2-name').innerText = "슬라치기";
                 document.getElementById('btn-3-name').innerText = "커브치기";
