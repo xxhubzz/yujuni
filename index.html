@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>조용훈 vs 이화용 3D 야구 대결</title>
+    <title>Elite Dugout UX - 조용훈 vs 이화용</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,7 +13,7 @@
             -webkit-user-select: none;
         }
         body {
-            background: radial-gradient(circle at center, #090d16 0%, #020409 100%);
+            background: #050811;
             color: #ffffff;
             font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
             height: 100vh;
@@ -31,60 +31,102 @@
             margin: 0 auto;
             padding: 6px;
             justify-content: space-between;
+            background: linear-gradient(180deg, #0b1120 0%, #030712 100%);
+            border: 2px solid #1e293b;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
         }
 
-        /* 프리미엄 방송국 스타일 스코어보드 */
-        .scoreboard {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
-            border: 1px solid rgba(59, 130, 246, 0.6);
+        /* ---------------- 허브 UX 스코어보드 ---------------- */
+        .scoreboard-panel {
+            background: linear-gradient(135deg, #162032 0%, #0d1322 100%);
+            border: 1px solid #334155;
             border-radius: 12px;
-            padding: 6px 12px;
+            padding: 8px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.2);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.15), 0 6px 12px rgba(0,0,0,0.5);
             flex-shrink: 0;
         }
-        .team-score {
-            font-size: 12px;
-            font-weight: bold;
+        .team-box {
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-width: 80px;
         }
-        .team-name {
+        .team-title {
+            font-size: 10px;
             color: #93c5fd;
-            font-size: 9px;
-            letter-spacing: 0.5px;
+            font-weight: bold;
             margin-bottom: 2px;
+            letter-spacing: 0.5px;
         }
-        .score-num {
-            font-size: 16px;
+        .score-val {
+            font-size: 20px;
             font-weight: 900;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-        .count-status {
-            text-align: center;
-            font-size: 11px;
-            background: rgba(2, 6, 23, 0.8);
-            padding: 4px 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(51, 65, 85, 0.8);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
-        }
-        .count-dots {
-            color: #f59e0b;
-            font-weight: 900;
-            letter-spacing: 1px;
+            color: #f8fafc;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
         }
 
-        /* 3D 원근감 야구장 구장 뷰 */
-        .stadium-view {
+        /* 중앙 카운트 & 다이아몬드 주자 현황판 */
+        .center-hub {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(2, 6, 23, 0.7);
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 4px 8px;
+        }
+        .hub-top {
+            font-size: 9px;
+            color: #cbd5e1;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .hub-middle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .count-text {
+            font-size: 10px;
+            color: #fbbf24;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        /* 미니 야구장 베이스 다이아몬드 */
+        .bases-mini {
             position: relative;
-            background: linear-gradient(180deg, #065f46 0%, #064e3b 40%, #022c22 100%);
-            border: 2px solid #10b981;
-            border-radius: 14px;
-            height: 310px;
+            width: 22px;
+            height: 22px;
+            transform: rotate(45deg);
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.4);
+            border-radius: 2px;
+        }
+        .base {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: #334155;
+            border-radius: 1px;
+        }
+        .base-2nd { top: 1px; left: 8px; }
+        .base-3rd { top: 8px; left: 1px; }
+        .base-1st { top: 8px; right: 1px; }
+        .base.active {
+            background: #ef4444;
+            box-shadow: 0 0 6px #ef4444;
+        }
+
+        /* ---------------- 하이엔드 3D 구장 뷰 ---------------- */
+        .stadium-viewport {
+            position: relative;
+            background: radial-gradient(circle at center, #065f46 0%, #064e3b 50%, #022c22 100%);
+            border: 2px solid #059669;
+            border-radius: 12px;
+            height: 275px;
             flex-shrink: 0;
             margin: 4px 0;
             overflow: hidden;
@@ -92,366 +134,234 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-end;
-            box-shadow: inset 0 0 35px rgba(0,0,0,0.85), 0 10px 20px rgba(0,0,0,0.5);
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 8px 16px rgba(0,0,0,0.6);
         }
-        .perspective-ground {
+        .stadium-dirt {
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, rgba(2, 44, 34, 0.95) 100%);
-            clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+            height: 70%;
+            background: radial-gradient(ellipse at bottom, rgba(146, 64, 14, 0.7) 0%, rgba(2, 44, 34, 0.9) 70%);
+            clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
             pointer-events: none;
         }
-        /* 마운드 및 투구 라인 그래픽 */
-        .pitcher-mound {
-            position: absolute;
-            top: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 80px;
-            height: 25px;
-            background: rgba(146, 64, 14, 0.4);
-            border-radius: 50%;
-            border: 1px dashed rgba(255,255,255,0.2);
-        }
 
-        /* 팝업 전광판 (구속 강조) */
-        .radar-popup {
+        /* 홀로그램 구속/결과 레이더 */
+        .radar-hud {
             position: absolute;
             top: 8%;
-            background: rgba(15, 23, 42, 0.92);
-            border: 2px solid #ef4444;
-            padding: 6px 16px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #38bdf8;
+            padding: 4px 16px;
             border-radius: 8px;
             text-align: center;
             display: none;
             z-index: 40;
-            box-shadow: 0 0 25px rgba(239, 68, 68, 0.8);
-            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
         }
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .radar-speed {
-            font-size: 24px;
+        .hud-speed {
+            font-size: 22px;
             font-weight: 900;
-            color: #ef4444;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            color: #38bdf8;
+            text-shadow: 0 0 8px rgba(56,189,248,0.5);
         }
-        .radar-result {
+        .hud-result {
             font-size: 11px;
             font-weight: bold;
-            color: #38bdf8;
-            margin-top: 1px;
+            color: #f8fafc;
         }
 
-        /* 3D 투수 캐릭터 (조용훈: 날씬하고 탄탄한 체형) */
-        .pitcher-container {
+        /* 선수 라벨 */
+        .player-tag {
             position: absolute;
-            top: 32px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid #475569;
+            color: #cbd5e1;
+            font-size: 9px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+            z-index: 12;
+        }
+        .tag-pitcher { top: 25px; left: 50%; transform: translateX(-50%); }
+        .tag-batter { top: 90px; right: 55px; }
+
+        /* 투수 & 타자 일러스트 레이어 */
+        .pitcher-avatar {
+            position: absolute;
+            top: 45px;
             left: 50%;
             transform: translateX(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 10;
-        }
-        .player-cap {
-            width: 22px;
-            height: 10px;
-            background: #1d4ed8;
-            border-radius: 10px 10px 0 0;
-            position: relative;
-        }
-        .player-cap::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            right: -4px;
-            width: 8px;
-            height: 3px;
-            background: #1e40af;
-        }
-        .player-head {
-            width: 18px;
-            height: 18px;
-            background: #fde047;
-            border-radius: 50%;
-            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3);
-        }
-        .pitcher-body-slim {
-            width: 28px;
-            height: 42px;
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            border-radius: 8px 8px 12px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 7px;
-            font-weight: 900;
-            color: #ffffff;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 2px 3px rgba(255,255,255,0.3);
-        }
-
-        /* 3D 타자 캐릭터 (이화용: 뚱뚱한 체형 + 안경 + 헬멧) */
-        .batter-container {
-            position: absolute;
-            top: 125px;
-            right: 75px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 15;
-        }
-        .batter-helmet {
-            width: 38px;
-            height: 18px;
-            background: #dc2626;
-            border-radius: 16px 16px 4px 4px;
-            position: relative;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        .batter-helmet::after {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            left: -6px;
-            width: 12px;
-            height: 4px;
-            background: #b91c1c;
-        }
-        .batter-head {
             width: 26px;
-            height: 24px;
-            background: #fde047;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3);
+            height: 38px;
+            background: #2563eb;
+            border-radius: 8px;
+            z-index: 10;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
         }
-        .batter-glasses {
-            width: 18px;
-            height: 7px;
-            border: 2px solid #0f172a;
-            border-radius: 2px;
-            background: rgba(255,255,255,0.7);
-        }
-        .batter-body-fat {
-            width: 58px;
-            height: 52px;
-            background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
-            border-radius: 26px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            font-weight: 900;
-            color: #ffffff;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.3);
-        }
-        /* 조용훈 타자 (날씬한 체형) */
-        .batter-body-slim {
-            width: 32px;
-            height: 50px;
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-            border-radius: 12px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            font-weight: 900;
-            color: #ffffff;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.3);
-        }
-        .batter-bat {
+        .batter-avatar {
             position: absolute;
-            left: -22px;
-            top: 4px;
-            width: 9px;
-            height: 60px;
-            background: linear-gradient(90deg, #e4e4e7 0%, #71717a 50%, #3f3f46 100%);
-            border-radius: 4px;
-            transform: rotate(20deg);
-            transform-origin: top center;
-            box-shadow: 2px 4px 6px rgba(0,0,0,0.4);
-            transition: transform 0.08s ease-in-out;
+            top: 105px;
+            right: 85px;
+            width: 48px;
+            height: 44px;
+            background: #ea580c;
+            border-radius: 20px;
+            z-index: 15;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+            transition: transform 0.08s;
         }
-        .batter-container.swinging .batter-bat {
-            transform: rotate(115deg) translateY(4px) translateX(14px);
+        .batter-avatar.swinging {
+            transform: rotate(-35deg) scale(1.05);
         }
 
-        /* 3D 스트라이크존 및 홈플레이트 */
-        .strike-zone-container {
+        /* 3D 스트라이크존 */
+        .strike-zone-box {
             position: absolute;
-            top: 130px;
-            left: 170px;
-            width: 104px;
-            height: 104px;
-            border: 2px solid rgba(239, 68, 68, 0.9);
+            top: 115px;
+            left: 175px;
+            width: 110px;
+            height: 110px;
+            border: 2px dashed rgba(56, 189, 248, 0.7);
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 6px;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+            background: rgba(56, 189, 248, 0.05);
+            border-radius: 4px;
+            box-shadow: inset 0 0 15px rgba(56,189,248,0.2);
         }
         .zone-cell {
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
         .home-plate {
             position: absolute;
-            bottom: 30px;
-            left: 196px;
-            width: 40px;
-            height: 20px;
+            bottom: 22px;
+            left: 202px;
+            width: 36px;
+            height: 18px;
             background: #f8fafc;
             clip-path: polygon(50% 0%, 100% 35%, 100% 100%, 0% 100%, 0% 35%);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.5);
         }
-        /* 입체 광원 야구공 */
         .ball {
             position: absolute;
             width: 14px;
             height: 14px;
-            background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e2e8f0 60%, #64748b 100%);
+            background: radial-gradient(circle at 30% 30%, #ffffff 0%, #cbd5e1 60%, #475569 100%);
             border-radius: 50%;
-            box-shadow: 0 0 10px #ffffff, 0 4px 6px rgba(0,0,0,0.6);
+            box-shadow: 0 0 10px #ffffff;
             display: none;
             z-index: 30;
         }
 
-        /* 메시지 박스 */
-        .message-box {
-            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
-            border: 1px solid #334155;
+        /* 메시지 바 */
+        .message-console {
+            background: #090e17;
+            border: 1px solid #1e293b;
             border-radius: 8px;
             padding: 6px;
             text-align: center;
             font-size: 11px;
-            color: #cbd5e1;
-            min-height: 28px;
+            color: #94a3b8;
+            min-height: 26px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
         }
 
-        /* 컨트롤러 패널 */
+        /* ---------------- 엘리트 컨트롤 패널 ---------------- */
         .controls-panel {
             display: flex;
             flex-direction: column;
             gap: 4px;
             flex-shrink: 0;
-            padding-bottom: 2px;
         }
-        .focus-selector {
+        .selector-row {
             display: flex;
             gap: 4px;
-            justify-content: center;
         }
-        .focus-btn {
+        .control-btn {
             flex: 1;
-            background: #1e293b;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
             border: 1px solid #475569;
             color: #cbd5e1;
-            padding: 5px;
-            border-radius: 6px;
+            padding: 8px 4px;
+            border-radius: 8px;
             font-size: 11px;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        .focus-btn.active {
-            background: #2563eb;
-            border-color: #60a5fa;
-            color: #ffffff;
-            box-shadow: 0 0 10px rgba(37,99,235,0.5);
-        }
-
-        .pitch-buttons {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 4px;
-        }
-        .pitch-btn {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 1px solid #3b82f6;
-            color: #ffffff;
-            padding: 10px 2px;
-            border-radius: 8px;
-            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            transition: all 0.1s;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
-            transition: all 0.1s;
+            gap: 2px;
         }
-        .pitch-btn:active {
-            transform: scale(0.95);
-            background: #1d4ed8;
+        .control-btn:active {
+            transform: scale(0.96);
+            background: #2563eb;
+            border-color: #60a5fa;
+            color: #ffffff;
         }
-        .pitch-name {
-            font-size: 12px;
-            font-weight: 900;
+        .control-btn.active {
+            background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+            border-color: #60a5fa;
+            color: #ffffff;
+            box-shadow: 0 0 12px rgba(37, 99, 235, 0.6);
+        }
+        .btn-subtext {
+            font-size: 9px;
             color: #93c5fd;
+            font-weight: normal;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 프리미엄 스코어보드 -->
-        <div class="scoreboard">
-            <div class="team-score">
-                <span class="team-name" id="score-label-left">조용훈 투수</span>
-                <span class="score-num" style="color:#ef4444;" id="score-left">0</span>
-            </div>
-            <div class="count-status">
-                <div style="color:#94a3b8; font-weight:bold;" id="inning-title">조용훈 투수 등판</div>
-                <div>S <span class="count-dots" id="count-s">0</span> | B <span class="count-dots" id="count-b">0</span> | O <span class="count-dots" id="count-o">0</span></div>
-            </div>
-            <div class="team-score">
-                <span class="team-name" id="score-label-right">이화용 타자</span>
-                <span class="score-num" style="color:#38bdf8;" id="score-right">0</span>
-            </div>
-        </div>
-
-        <!-- 3D 야구장 구장 뷰 -->
-        <div class="stadium-view" id="stadium">
-            <div class="perspective-ground"></div>
-            <div class="pitcher-mound"></div>
-
-            <div class="radar-popup" id="radar-popup">
-                <div class="radar-speed" id="display-speed">0 km/h</div>
-                <div class="radar-result" id="display-result">스트라이크!</div>
+        <!-- 상단 고급 스코어보드 & 주자 현황판 -->
+        <div class="scoreboard-panel">
+            <div class="team-box">
+                <span class="team-title" id="lbl-left">조용훈 투수</span>
+                <span class="score-val" style="color:#f87171;" id="score-left">0</span>
             </div>
 
-            <!-- 투수 캐릭터 -->
-            <div class="pitcher-container">
-                <div class="player-cap"></div>
-                <div class="player-head"></div>
-                <div id="pitcher-box" class="pitcher-body-slim">조용훈</div>
-            </div>
-
-            <!-- 타자 캐릭터 -->
-            <div class="batter-container" id="batter-container">
-                <div class="batter-helmet"></div>
-                <div class="batter-head"><div class="batter-glasses"></div></div>
-                <div id="batter-box" class="batter-body-fat">
-                    이화용
-                    <div class="batter-bat" id="batter-bat"></div>
+            <div class="center-hub">
+                <div class="hub-top" id="hub-title">조용훈 투구 모드</div>
+                <div class="hub-middle">
+                    <span class="count-text">S<span id="cnt-s">0</span> B<span id="cnt-b">0</span> O<span id="cnt-o">0</span></span>
+                    <!-- 베이스 현황판 (미니 다이아몬드) -->
+                    <div class="bases-mini">
+                        <div class="base base-2nd" id="base-2"></div>
+                        <div class="base base-3rd" id="base-3"></div>
+                        <div class="base base-1st" id="base-1"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- 스트라이크존 -->
-            <div class="strike-zone-container">
+            <div class="team-box">
+                <span class="team-title" id="lbl-right">이화용 타자</span>
+                <span class="score-val" style="color:#38bdf8;" id="score-right">0</span>
+            </div>
+        </div>
+
+        <!-- 3D 구장 뷰 -->
+        <div class="stadium-viewport" id="stadium">
+            <div class="stadium-dirt"></div>
+
+            <div class="radar-hud" id="radar-hud">
+                <div class="hud-speed" id="hud-speed">0.0 km/h</div>
+                <div class="hud-result" id="hud-result">스트라이크</div>
+            </div>
+
+            <div class="player-tag tag-pitcher" id="tag-pitcher">Cho (P)</div>
+            <div class="pitcher-avatar" id="pitcher-obj"></div>
+
+            <div class="player-tag tag-batter" id="tag-batter">Lee (B)</div>
+            <div class="batter-avatar" id="batter-obj"></div>
+
+            <div class="strike-zone-box">
                 <div class="zone-cell"></div><div class="zone-cell"></div><div class="zone-cell"></div>
                 <div class="zone-cell"></div><div class="zone-cell"></div><div class="zone-cell"></div>
                 <div class="zone-cell"></div><div class="zone-cell"></div><div class="zone-cell"></div>
@@ -461,42 +371,37 @@
             <div class="ball" id="ball"></div>
         </div>
 
-        <div class="message-box" id="message">
-            조용훈 투수 등판! 강속구로 이화용 타자를 압도하세요.
+        <div class="message-console" id="msg-box">
+            조용훈 투수 등판! 코너웍 또는 정중앙 제구를 선택하고 구종을 고르세요.
         </div>
 
-        <!-- 컨트롤러 패널 -->
+        <!-- 컨트롤 패널 -->
         <div class="controls-panel">
-            <div class="focus-selector" id="focus-area">
-                <button class="focus-btn active" id="focus-corner" onclick="setFocus('corner')">제구: 코너웍</button>
-                <button class="focus-btn" id="focus-center" onclick="setFocus('center')">제구: 정중앙</button>
+            <div class="selector-row">
+                <button class="control-btn active" id="focus-corner" onclick="setFocus('corner')">제구: 코너웍 <span class="btn-subtext">정밀 타격유도</span></button>
+                <button class="control-btn" id="focus-center" onclick="setFocus('center')">제구: 정중앙 <span class="btn-subtext">강속구 윽박</span></button>
             </div>
-            <div class="pitch-buttons">
-                <button class="pitch-btn" onclick="handleAction('fastball')">
-                    <span class="pitch-name" id="btn-1">직구</span>
-                </button>
-                <button class="pitch-btn" onclick="handleAction('slider')">
-                    <span class="pitch-name" id="btn-2">슬라이더</span>
-                </button>
-                <button class="pitch-btn" onclick="handleAction('curve')">
-                    <span class="pitch-name" id="btn-3">커브</span>
-                </button>
-                <button class="pitch-btn" onclick="handleAction('forkball')">
-                    <span class="pitch-name" id="btn-4">포크볼</span>
-                </button>
+            <div class="pitch-buttons selector-row" id="pitch-controls">
+                <button class="control-btn" onclick="executePlay('fastball')">직구 <span class="btn-subtext" id="sub-1">158~162km</span></button>
+                <button class="control-btn" onclick="executePlay('slider')">슬라이더 <span class="btn-subtext" id="sub-2">142~145km</span></button>
+                <button class="control-btn" onclick="executePlay('curve')">커브 <span class="btn-subtext" id="sub-3">138~140km</span></button>
+                <button class="control-btn" onclick="executePlay('forkball')">포크볼 <span class="btn-subtext" id="sub-4">130~142km</span></button>
             </div>
         </div>
     </div>
 
     <script>
-        let isBottomInning = false;
+        let isBottomInning = false; // false: 조용훈 투수 / true: 이화용 투수 (공수교대)
         let currentFocus = 'corner';
         let isActionActive = false;
         let strikes = 0;
         let balls = 0;
         let outs = 0;
-        let scoreYongHoon = 0; 
-        let scoreHwaYong = 0;  
+        let scoreCho = 0;
+        let scoreLee = 0;
+        
+        // 주자 상황 (false: 없음, true: 주자 있음)
+        let runners = { 1: false, 2: false, 3: false };
 
         function setFocus(type) {
             currentFocus = type;
@@ -504,74 +409,73 @@
             document.getElementById('focus-center').classList.toggle('active', type === 'center');
         }
 
-        function handleAction(type) {
+        function executePlay(type) {
             if (isActionActive) return;
             isActionActive = true;
 
             if (!isBottomInning) {
-                throwPitchAsYongHoon(type);
+                playPitcherMode(type);
             } else {
-                throwPitchAsHwaYong(type);
+                playHitterMode(type);
             }
         }
 
-        function throwPitchAsYongHoon(type) {
-            const messageEl = document.getElementById('message');
-            const radarPopup = document.getElementById('radar-popup');
-            const displaySpeed = document.getElementById('display-speed');
-            const displayResult = document.getElementById('display-result');
-            const batterContainer = document.getElementById('batter-container');
+        // 1. 조용훈 투수 플레이 모드
+        function playPitcherMode(type) {
+            const msg = document.getElementById('msg-box');
+            const hud = document.getElementById('radar-hud');
+            const hSpeed = document.getElementById('hud-speed');
+            const hResult = document.getElementById('hud-result');
+            const batter = document.getElementById('batter-obj');
 
-            radarPopup.style.display = 'none';
-            messageEl.innerText = "조용훈 투수 와인드업! 공이 날아갑니다.";
+            hud.style.display = 'none';
+            msg.innerText = "조용훈 투구 인터벌... 공이 날아갑니다!";
 
-            let speed = 0;
-            let startX = 240, startY = 45;
-            let endX = 220, endY = 180;
+            let speed = (158 + Math.random() * 4).toFixed(1);
+            let startX = 240, startY = 55;
+            let endX = 225, endY = 170;
 
             if (type === 'fastball') {
                 speed = (158 + Math.random() * 4).toFixed(1);
                 if (currentFocus === 'corner') {
-                    endX = 220 + (Math.random() > 0.5 ? 45 : -45);
-                    endY = 180 + (Math.random() > 0.5 ? 45 : -45);
+                    endX = 225 + (Math.random() > 0.5 ? 48 : -48);
+                    endY = 170 + (Math.random() > 0.5 ? 48 : -48);
                 } else {
-                    endX = 220 + (Math.random() * 25 - 12);
-                    endY = 180 + (Math.random() * 25 - 12);
+                    endX = 225 + (Math.random() * 20 - 10);
+                    endY = 170 + (Math.random() * 20 - 10);
                 }
             } else if (type === 'slider') {
                 speed = (142 + Math.random() * 3).toFixed(1);
-                endX = 245 + (Math.random() * 15 - 7);
-                endY = 190 + (Math.random() * 15 - 7);
+                endX = 250 + (Math.random() * 15 - 7);
+                endY = 180 + (Math.random() * 15 - 7);
             } else if (type === 'curve') {
                 speed = (138 + Math.random() * 2).toFixed(1);
-                endX = 220 + (Math.random() * 30 - 15);
-                endY = 205 + (Math.random() * 15);
+                endX = 225 + (Math.random() * 30 - 15);
+                endY = 195 + (Math.random() * 15);
             } else if (type === 'forkball') {
                 speed = (130 + Math.random() * 12).toFixed(1);
-                endX = 220 + (Math.random() * 20 - 10);
-                endY = 215 + (Math.random() * 20);
+                endX = 225 + (Math.random() * 20 - 10);
+                endY = 210 + (Math.random() * 15);
             }
 
-            animateBall(startX, startY, endX, endY, 280, type, () => {
-                let isStrike = (endX >= 170 && endX <= 274 && endY >= 130 && endY <= 234);
+            animateBall(startX, startY, endX, endY, 260, type, () => {
+                let isStrike = (endX >= 170 && endX <= 280 && endY >= 115 && endY <= 225);
                 let resultText = "";
 
-                let actionRoll = Math.random();
-                if (actionRoll < 0.32) {
+                let roll = Math.random();
+                if (roll < 0.32) {
                     isStrike = true;
                     resultText = "이화용 타자 헛스윙!";
                     strikes++;
-                    batterContainer.classList.add('swinging');
-                    setTimeout(() => batterContainer.classList.remove('swinging'), 200);
-                } else if (actionRoll < 0.55 && isStrike) {
-                    batterContainer.classList.add('swinging');
-                    setTimeout(() => batterContainer.classList.remove('swinging'), 200);
+                    batter.classList.add('swinging');
+                    setTimeout(() => batter.classList.remove('swinging'), 180);
+                } else if (roll < 0.52 && isStrike) {
+                    batter.classList.add('swinging');
+                    setTimeout(() => batter.classList.remove('swinging'), 180);
 
-                    let isFoul = Math.random() > 0.4;
-                    if (isFoul) {
-                        resultText = "배트에 맞았으나 빗나간 파울!";
+                    if (Math.random() > 0.4) {
+                        resultText = "파울 타구!";
                         if (strikes < 2) strikes++;
-                        else resultText = "투 스트라이크 이후 파울! 카운트 유지!";
                     } else {
                         resultText = "내야 땅볼 아웃!";
                         outs++;
@@ -581,48 +485,75 @@
                         resultText = "루킹 스트라이크!";
                         strikes++;
                     } else {
-                        resultText = "볼!";
+                        resultText = "볼! 존을 벗어남";
                         balls++;
                     }
                 }
 
-                displaySpeed.innerText = speed + " km/h";
-                displayResult.innerText = resultText;
-                radarPopup.style.display = 'block';
-                messageEl.innerText = `[구속 ${speed}km/h] ${resultText}`;
+                hSpeed.innerText = speed + " km/h";
+                hResult.innerText = resultText;
+                hud.style.display = 'block';
+                msg.innerText = `[구속 ${speed}km/h] ${resultText}`;
 
-                checkCountAndInning();
+                checkInningStatus();
             });
         }
 
-        function throwPitchAsHwaYong(type) {
-            const messageEl = document.getElementById('message');
-            const radarPopup = document.getElementById('radar-popup');
-            const displaySpeed = document.getElementById('display-speed');
-            const displayResult = document.getElementById('display-result');
+        // 2. 공수교대 후: 이화용 투수 플레이 (조용훈 타자 진루/득점 로직)
+        function playHitterMode(type) {
+            const msg = document.getElementById('msg-box');
+            const hud = document.getElementById('radar-hud');
+            const hSpeed = document.getElementById('hud-speed');
+            const hResult = document.getElementById('hud-result');
 
-            radarPopup.style.display = 'none';
-            messageEl.innerText = "이화용 투수 투구! 조용훈 타자가 타격합니다!";
+            hud.style.display = 'none';
+            msg.innerText = "이화용 투수 투구! 조용훈 타자 타격 준비!";
 
-            let speed = (type === 'fastball' || type === 'slider') ? (80 + Math.random() * 5).toFixed(1) : (60 + Math.random() * 5).toFixed(1);
-            let startX = 240, startY = 45;
-            let endX = 220, endY = 180;
+            let speed = (type === 'fastball' || type === 'slider') ? (82 + Math.random() * 4).toFixed(1) : (62 + Math.random() * 4).toFixed(1);
+            let startX = 240, startY = 55;
+            let endX = 225, endY = 170;
 
-            animateBall(startX, startY, endX, endY, 400, type, () => {
-                scoreYongHoon++;
-                let hitResult = Math.random() > 0.4 ? "💥 통타! 초대형 홈런!!" : "🔥 좌중간 꿰뚫는 안타!";
-                
-                displaySpeed.innerText = speed + " km/h";
-                displayResult.innerText = hitResult;
-                radarPopup.style.display = 'block';
-                messageEl.innerText = `[구속 ${speed}km/h] 조용훈 타자 시원한 타격 폭발! 조용훈 점수 획득!`;
+            animateBall(startX, startY, endX, endY, 380, type, () => {
+                // 안타 또는 홈런 로직 (진루 규칙 적용)
+                let isHomeRun = Math.random() > 0.65;
+                let resultText = "";
+
+                if (isHomeRun) {
+                    resultText = "💥 통타! 초대형 투런 홈런!!";
+                    let scored = advanceRunners(4); // 홈런은 타자 포함 모든 주자 홈인
+                    scoreCho += scored;
+                } else {
+                    resultText = "🔥 날카로운 중전 안타 출루!";
+                    let scored = advanceRunners(1); // 단타 1루 진루
+                    scoreCho += scored;
+                }
+
+                hSpeed.innerText = speed + " km/h";
+                hResult.innerText = resultText;
+                hud.style.display = 'block';
+                msg.innerText = `[조용훈 타격] ${resultText} (조용훈 점수 획득!)`;
 
                 setTimeout(() => {
-                    updateScoreboard();
+                    updateBoard();
                     document.getElementById('ball').style.display = 'none';
                     isActionActive = false;
                 }, 1400);
             });
+        }
+
+        // 진루 및 득점 계산 시스템 (1루, 2루, 3루 주자 밀어내기)
+        function advanceRunners(bases) {
+            let runs = 0;
+            if (bases === 4) { // 홈런
+                runs = 1 + (runners[1] ? 1 : 0) + (runners[2] ? 1 : 0) + (runners[3] ? 1 : 0);
+                runners = { 1: false, 2: false, 3: false };
+            } else if (bases === 1) { // 단타
+                if (runners[3]) { runs++; runners[3] = false; }
+                if (runners[2]) { runners[3] = true; runners[2] = false; }
+                if (runners[1]) { runners[2] = true; }
+                runners[1] = true; // 타자 1루 진루
+            }
+            return runs;
         }
 
         function animateBall(sx, sy, ex, ey, duration, type, callback) {
@@ -639,8 +570,8 @@
                 let curY = sy + (ey - sy) * progress;
                 let curScale = 0.3 + 0.9 * progress;
 
-                if (type === 'slider') curX += Math.sin(progress * Math.PI) * 20;
-                if (type === 'curve') curY -= Math.sin(progress * Math.PI) * 15;
+                if (type === 'slider') curX += Math.sin(progress * Math.PI) * 18;
+                if (type === 'curve') curY -= Math.sin(progress * Math.PI) * 14;
 
                 ball.style.left = curX + 'px';
                 ball.style.top = curY + 'px';
@@ -655,7 +586,7 @@
             requestAnimationFrame(step);
         }
 
-        function checkCountAndInning() {
+        function checkInningStatus() {
             setTimeout(() => {
                 if (strikes >= 3) {
                     alert("삼진 아웃!");
@@ -663,53 +594,71 @@
                     strikes = 0;
                     balls = 0;
                 } else if (balls >= 4) {
-                    alert("볼넷 허용!");
+                    alert("볼넷 허용! 주자 1루 진루");
+                    advanceRunners(1);
                     strikes = 0;
                     balls = 0;
                 }
 
                 if (outs >= 3 && !isBottomInning) {
-                    alert("3아웃 체인지! 공수 교대: 이제 이화용 투수를 플레이하여 조용훈 타자를 상대하세요!");
+                    alert("3아웃 체인지! 공수 교대: 이제 이화용 투수를 플레이하여 조용훈 타자의 타격을 지원하세요!");
                     isBottomInning = true;
                     outs = 0;
                     strikes = 0;
                     balls = 0;
-                    setupHwaYongPitcherMode();
+                    runners = { 1: false, 2: false, 3: false };
+                    setupHwaYongPitcherUX();
                 }
 
-                updateScoreboard();
+                updateBoard();
                 document.getElementById('ball').style.display = 'none';
                 isActionActive = false;
             }, 1200);
         }
 
-        function setupHwaYongPitcherMode() {
-            document.getElementById('inning-title').innerText = "공수 교대 [이화용 투수 플레이]";
-            document.getElementById('score-label-left').innerText = "이화용 투수";
-            document.getElementById('score-label-right').innerText = "조용훈 타자";
+        function setupHwaYongPitcherUX() {
+            document.getElementById('hub-title').innerText = "이화용 투수 / 조용훈 타격 모드";
+            document.getElementById('lbl-left').innerText = "이화용 투수";
+            document.getElementById('lbl-right').innerText = "조용훈 타자";
+            document.getElementById('tag-pitcher').innerText = "Lee (P)";
+            document.getElementById('tag-batter').innerText = "Cho (B)";
 
-            const pitcherBox = document.getElementById('pitcher-box');
-            pitcherBox.className = "pitcher-body-fat";
-            pitcherBox.innerText = "이화용";
+            // 투수 체형 변환 (뚱뚱함)
+            const pitcherObj = document.getElementById('pitcher-obj');
+            pitcherObj.className = "pitcher-avatar";
+            pitcherObj.style.width = "46px";
+            pitcherObj.style.borderRadius = "18px";
+            pitcherObj.style.background = "#ea580c";
 
-            const batterBox = document.getElementById('batter-box');
-            batterBox.className = "batter-body-slim";
-            batterBox.innerHTML = '조용훈<div class="batter-bat" id="batter-bat"></div>';
+            // 타자 체형 변환 (날씬함)
+            const batterObj = document.getElementById('batter-obj');
+            batterObj.className = "batter-avatar";
+            batterObj.style.width = "30px";
+            batterObj.style.borderRadius = "10px";
+            batterObj.style.background = "#2563eb";
 
-            document.getElementById('btn-1').innerText = "직구(80)";
-            document.getElementById('btn-2').innerText = "슬라(80)";
-            document.getElementById('btn-3').innerText = "커브(60)";
-            document.getElementById('btn-4').innerText = "포크(60)";
-            
-            document.getElementById('message').innerText = "이화용 투수 등판! 원하시는 구종을 골라 던지면 조용훈 타자가 홈런을 칩니다!";
+            // 컨트롤러 버튼 문구 전환
+            document.getElementById('sub-1').innerText = "80~85km";
+            document.getElementById('sub-2').innerText = "80~85km";
+            document.getElementById('sub-3').innerText = "60~65km";
+            document.getElementById('sub-4').innerText = "60~65km";
+
+            document.getElementById('msg-box').innerText = "공수교대 완료! 이화용 투수의 공을 골라 던지면 조용훈 타자가 안타/홈런을 칩니다.";
         }
 
-        function updateScoreboard() {
-            document.getElementById('count-s').innerText = strikes;
-            document.getElementById('count-b').innerText = balls;
-            document.getElementById('count-o').innerText = outs;
-            document.getElementById('score-left').innerText = scoreHwaYong;
-            document.getElementById('score-right').innerText = scoreYongHoon;
+        function updateBoard() {
+            document.getElementById('cnt-s').innerText = strikes;
+            document.getElementById('cnt-b').innerText = balls;
+            document.getElementById('cnt-o').innerText = outs;
+            
+            // 점수 반영 (조용훈은 항상 우측/좌측 지정된 스코어에 올바르게 연동)
+            document.getElementById('score-left').innerText = scoreLee;
+            document.getElementById('score-right').innerText = scoreCho;
+
+            // 미니 베이스 현황판 불빛 업데이트
+            document.getElementById('base-1').className = "base base-1st " + (runners[1] ? "active" : "");
+            document.getElementById('base-2').className = "base base-2nd " + (runners[2] ? "active" : "");
+            document.getElementById('base-3').className = "base base-3rd " + (runners[3] ? "active" : "");
         }
     </script>
 </body>
