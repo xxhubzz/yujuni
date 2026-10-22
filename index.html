@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>조용훈 vs 이화용 야구 대결</title>
+    <title>조용훈 vs 이화용 3D 야구 대결</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,7 +13,7 @@
             -webkit-user-select: none;
         }
         body {
-            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            background: radial-gradient(circle at center, #090d16 0%, #020409 100%);
             color: #ffffff;
             font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
             height: 100vh;
@@ -33,16 +33,16 @@
             justify-content: space-between;
         }
 
-        /* 스코어보드 */
+        /* 프리미엄 방송국 스타일 스코어보드 */
         .scoreboard {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border: 2px solid #3b82f6;
-            border-radius: 8px;
-            padding: 6px 10px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.6);
+            border-radius: 12px;
+            padding: 6px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.2);
             flex-shrink: 0;
         }
         .team-score {
@@ -54,33 +54,36 @@
         }
         .team-name {
             color: #93c5fd;
-            font-size: 10px;
-            margin-bottom: 1px;
+            font-size: 9px;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
         }
         .score-num {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 900;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         .count-status {
             text-align: center;
             font-size: 11px;
-            background: #020617;
-            padding: 3px 8px;
-            border-radius: 6px;
-            border: 1px solid #334155;
+            background: rgba(2, 6, 23, 0.8);
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(51, 65, 85, 0.8);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
         }
         .count-dots {
-            color: #fbbf24;
-            font-weight: bold;
+            color: #f59e0b;
+            font-weight: 900;
             letter-spacing: 1px;
         }
 
-        /* 구장 뷰 */
+        /* 3D 원근감 야구장 구장 뷰 */
         .stadium-view {
             position: relative;
-            background: linear-gradient(180deg, #064e3b 0%, #022c22 65%, #011b15 100%);
-            border: 2px solid #059669;
-            border-radius: 10px;
+            background: linear-gradient(180deg, #065f46 0%, #064e3b 40%, #022c22 100%);
+            border: 2px solid #10b981;
+            border-radius: 14px;
             height: 310px;
             flex-shrink: 0;
             margin: 4px 0;
@@ -89,46 +92,65 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-end;
-            box-shadow: inset 0 0 25px rgba(0,0,0,0.8);
+            box-shadow: inset 0 0 35px rgba(0,0,0,0.85), 0 10px 20px rgba(0,0,0,0.5);
         }
         .perspective-ground {
             position: absolute;
             bottom: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(180deg, rgba(5,150,105,0.1) 0%, rgba(2,44,34,0.95) 100%);
-            clip-path: polygon(15% 0%, 85% 0%, 100% 100%, 0% 100%);
+            background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, rgba(2, 44, 34, 0.95) 100%);
+            clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
             pointer-events: none;
         }
+        /* 마운드 및 투구 라인 그래픽 */
+        .pitcher-mound {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 25px;
+            background: rgba(146, 64, 14, 0.4);
+            border-radius: 50%;
+            border: 1px dashed rgba(255,255,255,0.2);
+        }
 
-        /* 전광판 구속 강조 팝업 */
+        /* 팝업 전광판 (구속 강조) */
         .radar-popup {
             position: absolute;
-            top: 6%;
-            background: rgba(15, 23, 42, 0.95);
+            top: 8%;
+            background: rgba(15, 23, 42, 0.92);
             border: 2px solid #ef4444;
-            padding: 4px 14px;
-            border-radius: 6px;
+            padding: 6px 16px;
+            border-radius: 8px;
             text-align: center;
             display: none;
             z-index: 40;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.7);
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.8);
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
         .radar-speed {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 900;
             color: #ef4444;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         .radar-result {
             font-size: 11px;
             font-weight: bold;
             color: #38bdf8;
+            margin-top: 1px;
         }
 
-        /* 투수 캐릭터 */
+        /* 3D 투수 캐릭터 (조용훈: 날씬하고 탄탄한 체형) */
         .pitcher-container {
             position: absolute;
-            top: 35px;
+            top: 32px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -136,145 +158,189 @@
             align-items: center;
             z-index: 10;
         }
-        .player-head {
-            width: 20px;
-            height: 20px;
-            background: #fde047;
-            border-radius: 50%;
+        .player-cap {
+            width: 22px;
+            height: 10px;
+            background: #1d4ed8;
+            border-radius: 10px 10px 0 0;
             position: relative;
         }
-        .pitcher-body-slim {
-            width: 32px;
-            height: 40px;
-            background: #2563eb;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            font-weight: bold;
-            color: #ffffff;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        .player-cap::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: -4px;
+            width: 8px;
+            height: 3px;
+            background: #1e40af;
         }
-        .pitcher-body-fat {
-            width: 52px;
+        .player-head {
+            width: 18px;
+            height: 18px;
+            background: #fde047;
+            border-radius: 50%;
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3);
+        }
+        .pitcher-body-slim {
+            width: 28px;
             height: 42px;
-            background: #ea580c;
-            border-radius: 20px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border-radius: 8px 8px 12px 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 8px;
-            font-weight: bold;
+            font-size: 7px;
+            font-weight: 900;
             color: #ffffff;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 2px 3px rgba(255,255,255,0.3);
         }
 
-        /* 타자 캐릭터 */
+        /* 3D 타자 캐릭터 (이화용: 뚱뚱한 체형 + 안경 + 헬멧) */
         .batter-container {
             position: absolute;
-            top: 130px;
-            right: 80px;
+            top: 125px;
+            right: 75px;
             display: flex;
             flex-direction: column;
             align-items: center;
             z-index: 15;
         }
+        .batter-helmet {
+            width: 38px;
+            height: 18px;
+            background: #dc2626;
+            border-radius: 16px 16px 4px 4px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .batter-helmet::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: -6px;
+            width: 12px;
+            height: 4px;
+            background: #b91c1c;
+        }
+        .batter-head {
+            width: 26px;
+            height: 24px;
+            background: #fde047;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3);
+        }
+        .batter-glasses {
+            width: 18px;
+            height: 7px;
+            border: 2px solid #0f172a;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.7);
+        }
         .batter-body-fat {
-            width: 54px;
-            height: 50px;
-            background: #ea580c;
-            border-radius: 24px;
+            width: 58px;
+            height: 52px;
+            background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+            border-radius: 26px;
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 8px;
-            font-weight: bold;
+            font-weight: 900;
             color: #ffffff;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.3);
         }
+        /* 조용훈 타자 (날씬한 체형) */
         .batter-body-slim {
-            width: 34px;
-            height: 48px;
-            background: #2563eb;
+            width: 32px;
+            height: 50px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
             border-radius: 12px;
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 8px;
-            font-weight: bold;
+            font-weight: 900;
             color: #ffffff;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.3);
         }
         .batter-bat {
             position: absolute;
-            left: -20px;
-            top: 5px;
-            width: 8px;
-            height: 55px;
-            background: linear-gradient(90deg, #d4d4d8, #71717a);
+            left: -22px;
+            top: 4px;
+            width: 9px;
+            height: 60px;
+            background: linear-gradient(90deg, #e4e4e7 0%, #71717a 50%, #3f3f46 100%);
             border-radius: 4px;
             transform: rotate(20deg);
             transform-origin: top center;
+            box-shadow: 2px 4px 6px rgba(0,0,0,0.4);
             transition: transform 0.08s ease-in-out;
         }
         .batter-container.swinging .batter-bat {
-            transform: rotate(110deg) translateY(4px) translateX(12px);
+            transform: rotate(115deg) translateY(4px) translateX(14px);
         }
 
-        /* 스트라이크존 및 홈플레이트 */
+        /* 3D 스트라이크존 및 홈플레이트 */
         .strike-zone-container {
             position: absolute;
-            top: 135px;
+            top: 130px;
             left: 170px;
-            width: 100px;
-            height: 100px;
-            border: 2px solid rgba(239, 68, 68, 0.8);
+            width: 104px;
+            height: 104px;
+            border: 2px solid rgba(239, 68, 68, 0.9);
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(3, 1fr);
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 6px;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
         }
         .zone-cell {
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         .home-plate {
             position: absolute;
-            bottom: 35px;
-            left: 197px;
-            width: 36px;
-            height: 18px;
+            bottom: 30px;
+            left: 196px;
+            width: 40px;
+            height: 20px;
             background: #f8fafc;
             clip-path: polygon(50% 0%, 100% 35%, 100% 100%, 0% 100%, 0% 35%);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.6);
         }
+        /* 입체 광원 야구공 */
         .ball {
             position: absolute;
-            width: 12px;
-            height: 12px;
-            background: radial-gradient(circle at 30% 30%, #ffffff 0%, #cbd5e1 60%, #64748b 100%);
+            width: 14px;
+            height: 14px;
+            background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e2e8f0 60%, #64748b 100%);
             border-radius: 50%;
-            box-shadow: 0 0 6px #ffffff;
+            box-shadow: 0 0 10px #ffffff, 0 4px 6px rgba(0,0,0,0.6);
             display: none;
             z-index: 30;
         }
 
         /* 메시지 박스 */
         .message-box {
-            background: #0f172a;
+            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
             border: 1px solid #334155;
-            border-radius: 6px;
+            border-radius: 8px;
             padding: 6px;
             text-align: center;
             font-size: 11px;
             color: #cbd5e1;
-            min-height: 26px;
+            min-height: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
         }
 
         /* 컨트롤러 패널 */
@@ -295,16 +361,18 @@
             background: #1e293b;
             border: 1px solid #475569;
             color: #cbd5e1;
-            padding: 4px;
-            border-radius: 4px;
+            padding: 5px;
+            border-radius: 6px;
             font-size: 11px;
             cursor: pointer;
             font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         .focus-btn.active {
             background: #2563eb;
             border-color: #60a5fa;
             color: #ffffff;
+            box-shadow: 0 0 10px rgba(37,99,235,0.5);
         }
 
         .pitch-buttons {
@@ -317,13 +385,14 @@
             border: 1px solid #3b82f6;
             color: #ffffff;
             padding: 10px 2px;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            transition: all 0.1s;
         }
         .pitch-btn:active {
             transform: scale(0.95);
@@ -331,14 +400,14 @@
         }
         .pitch-name {
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 900;
             color: #93c5fd;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 스코어보드 -->
+        <!-- 프리미엄 스코어보드 -->
         <div class="scoreboard">
             <div class="team-score">
                 <span class="team-name" id="score-label-left">조용훈 투수</span>
@@ -354,9 +423,10 @@
             </div>
         </div>
 
-        <!-- 3D 구장 뷰 -->
+        <!-- 3D 야구장 구장 뷰 -->
         <div class="stadium-view" id="stadium">
             <div class="perspective-ground"></div>
+            <div class="pitcher-mound"></div>
 
             <div class="radar-popup" id="radar-popup">
                 <div class="radar-speed" id="display-speed">0 km/h</div>
@@ -365,13 +435,15 @@
 
             <!-- 투수 캐릭터 -->
             <div class="pitcher-container">
+                <div class="player-cap"></div>
                 <div class="player-head"></div>
                 <div id="pitcher-box" class="pitcher-body-slim">조용훈</div>
             </div>
 
             <!-- 타자 캐릭터 -->
             <div class="batter-container" id="batter-container">
-                <div class="player-head"></div>
+                <div class="batter-helmet"></div>
+                <div class="batter-head"><div class="batter-glasses"></div></div>
                 <div id="batter-box" class="batter-body-fat">
                     이화용
                     <div class="batter-bat" id="batter-bat"></div>
@@ -390,10 +462,10 @@
         </div>
 
         <div class="message-box" id="message">
-            조용훈 투수 등판! 강속구로 이화용 타자를 상대하세요.
+            조용훈 투수 등판! 강속구로 이화용 타자를 압도하세요.
         </div>
 
-        <!-- 컨트롤러 -->
+        <!-- 컨트롤러 패널 -->
         <div class="controls-panel">
             <div class="focus-selector" id="focus-area">
                 <button class="focus-btn active" id="focus-corner" onclick="setFocus('corner')">제구: 코너웍</button>
@@ -417,14 +489,14 @@
     </div>
 
     <script>
-        let isBottomInning = false; // false: 조용훈 투수 플레이, true: 이화용 투수 플레이 (조용훈 타자)
+        let isBottomInning = false;
         let currentFocus = 'corner';
         let isActionActive = false;
         let strikes = 0;
         let balls = 0;
         let outs = 0;
-        let scoreYongHoon = 0; // 조용훈 점수 (항상 조용훈의 누적 점수)
-        let scoreHwaYong = 0;  // 이화용 점수
+        let scoreYongHoon = 0; 
+        let scoreHwaYong = 0;  
 
         function setFocus(type) {
             currentFocus = type;
@@ -443,7 +515,6 @@
             }
         }
 
-        // 1. 조용훈 투수 플레이
         function throwPitchAsYongHoon(type) {
             const messageEl = document.getElementById('message');
             const radarPopup = document.getElementById('radar-popup');
@@ -456,33 +527,33 @@
 
             let speed = 0;
             let startX = 240, startY = 45;
-            let endX = 220, endY = 185;
+            let endX = 220, endY = 180;
 
             if (type === 'fastball') {
                 speed = (158 + Math.random() * 4).toFixed(1);
                 if (currentFocus === 'corner') {
                     endX = 220 + (Math.random() > 0.5 ? 45 : -45);
-                    endY = 185 + (Math.random() > 0.5 ? 45 : -45);
+                    endY = 180 + (Math.random() > 0.5 ? 45 : -45);
                 } else {
                     endX = 220 + (Math.random() * 25 - 12);
-                    endY = 185 + (Math.random() * 25 - 12);
+                    endY = 180 + (Math.random() * 25 - 12);
                 }
             } else if (type === 'slider') {
                 speed = (142 + Math.random() * 3).toFixed(1);
                 endX = 245 + (Math.random() * 15 - 7);
-                endY = 195 + (Math.random() * 15 - 7);
+                endY = 190 + (Math.random() * 15 - 7);
             } else if (type === 'curve') {
                 speed = (138 + Math.random() * 2).toFixed(1);
                 endX = 220 + (Math.random() * 30 - 15);
-                endY = 210 + (Math.random() * 15);
+                endY = 205 + (Math.random() * 15);
             } else if (type === 'forkball') {
                 speed = (130 + Math.random() * 12).toFixed(1);
                 endX = 220 + (Math.random() * 20 - 10);
-                endY = 220 + (Math.random() * 20);
+                endY = 215 + (Math.random() * 20);
             }
 
             animateBall(startX, startY, endX, endY, 280, type, () => {
-                let isStrike = (endX >= 170 && endX <= 270 && endY >= 135 && endY <= 235);
+                let isStrike = (endX >= 170 && endX <= 274 && endY >= 130 && endY <= 234);
                 let resultText = "";
 
                 let actionRoll = Math.random();
@@ -524,7 +595,6 @@
             });
         }
 
-        // 2. 이화용 투수 플레이 (공수 교대 후)
         function throwPitchAsHwaYong(type) {
             const messageEl = document.getElementById('message');
             const radarPopup = document.getElementById('radar-popup');
@@ -536,10 +606,9 @@
 
             let speed = (type === 'fastball' || type === 'slider') ? (80 + Math.random() * 5).toFixed(1) : (60 + Math.random() * 5).toFixed(1);
             let startX = 240, startY = 45;
-            let endX = 220, endY = 185;
+            let endX = 220, endY = 180;
 
             animateBall(startX, startY, endX, endY, 400, type, () => {
-                // 조용훈 타자 타격 성공 -> 조용훈 점수(scoreYongHoon) 상승!
                 scoreYongHoon++;
                 let hitResult = Math.random() > 0.4 ? "💥 통타! 초대형 홈런!!" : "🔥 좌중간 꿰뚫는 안타!";
                 
@@ -616,22 +685,17 @@
 
         function setupHwaYongPitcherMode() {
             document.getElementById('inning-title').innerText = "공수 교대 [이화용 투수 플레이]";
-            
-            // 스코어보드 라벨 명확하게 고정 (왼쪽: 이화용 투수, 오른쪽: 조용훈 타자)
             document.getElementById('score-label-left').innerText = "이화용 투수";
             document.getElementById('score-label-right').innerText = "조용훈 타자";
 
-            // 투수 체형 변경: 이화용 투수 (뚱뚱함 + 안경)
             const pitcherBox = document.getElementById('pitcher-box');
             pitcherBox.className = "pitcher-body-fat";
             pitcherBox.innerText = "이화용";
 
-            // 타자 체형 변경: 조용훈 타자 (날씬함)
             const batterBox = document.getElementById('batter-box');
             batterBox.className = "batter-body-slim";
             batterBox.innerHTML = '조용훈<div class="batter-bat" id="batter-bat"></div>';
 
-            // 버튼 구속 안내 변경
             document.getElementById('btn-1').innerText = "직구(80)";
             document.getElementById('btn-2').innerText = "슬라(80)";
             document.getElementById('btn-3').innerText = "커브(60)";
@@ -644,8 +708,6 @@
             document.getElementById('count-s').innerText = strikes;
             document.getElementById('count-b').innerText = balls;
             document.getElementById('count-o').innerText = outs;
-            
-            // 점수 바인딩 수정: 이화용 투수(왼쪽)는 0점 유지, 조용훈 타자(오른쪽)가 scoreYongHoon 점수를 표시하도록 고정
             document.getElementById('score-left').innerText = scoreHwaYong;
             document.getElementById('score-right').innerText = scoreYongHoon;
         }
