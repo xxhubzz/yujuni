@@ -1,1931 +1,499 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>유준이 키우기 - 무한 육아 어드벤처</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    * {
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
-      touch-action: manipulation;
-    }
-    body, html {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #fefce8;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Nanum Gothic", sans-serif;
-    }
-    #game-canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      display: block;
-      touch-action: none;
-      z-index: 1;
-    }
-    .hud-layer, .controls-layer {
-      position: absolute;
-      pointer-events: none;
-    }
-    .interactive {
-      pointer-events: auto;
-    }
-    .controls-layer {
-      bottom: max(env(safe-area-inset-bottom, 15px) + 38px, 46px);
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      padding: 0 16px;
-    }
-    .joystick-base {
-      width: 115px;
-      height: 115px;
-      background: radial-gradient(circle, rgba(255,255,255,0.75) 0%, rgba(200,200,200,0.5) 100%);
-      border: 3px solid rgba(255,255,255,0.85);
-      border-radius: 50%;
-      position: relative;
-      touch-action: none;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-    }
-    .joystick-thumb {
-      width: 48px;
-      height: 48px;
-      background: radial-gradient(circle, #fde047 0%, #eab308 100%);
-      border-radius: 50%;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-      pointer-events: none;
-    }
-    .skill-btn {
-      transition: transform 0.08s ease, filter 0.08s ease;
-      touch-action: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .skill-btn:active {
-      transform: scale(0.92);
-      filter: brightness(0.9);
-    }
-    .modal-overlay {
-      background: rgba(15, 23, 42, 0.65);
-      backdrop-filter: blur(4px);
-    }
-    .allow-scroll {
-      pointer-events: auto !important;
-      touch-action: pan-y !important;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: contain;
-    }
-    .equip-drawer {
-      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .equip-drawer.collapsed {
-      transform: translateX(-145px);
-    }
-    @keyframes alertAnim {
-      0%, 100% { transform: scale(1); opacity: 0.9; }
-      50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 12px rgba(239,68,68,0.8)); }
-    }
-    .boss-alert {
-      animation: alertAnim 0.7s infinite;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>조용훈 vs 이화용 투수 시뮬레이터</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            background-color: #0b0f19;
+            color: #ffffff;
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 480px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 6px;
+            justify-content: space-between;
+        }
+        /* 상단 전광판 / 스코어보드 */
+        .scoreboard {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            padding: 6px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .team-score {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .count-status {
+            text-align: center;
+            font-size: 12px;
+            background: #020617;
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #1e293b;
+        }
+        .count-dots {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+
+        /* 구장 뷰 (시뮬레이터 영역) */
+        .stadium-view {
+            position: relative;
+            background: radial-gradient(circle at center, #14532d 0%, #064e3b 60%, #022c22 100%);
+            border: 2px solid #059669;
+            border-radius: 8px;
+            flex: 1;
+            margin: 4px 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+        }
+
+        /* 스트라이크존 */
+        .strike-zone-container {
+            position: absolute;
+            top: 25%;
+            width: 130px;
+            height: 130px;
+            border: 2px dashed rgba(255, 255, 255, 0.4);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+        }
+        .zone-cell {
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .home-plate {
+            position: absolute;
+            bottom: 12px;
+            width: 36px;
+            height: 20px;
+            background: #f8fafc;
+            clip-path: polygon(50% 0%, 100% 35%, 100% 100%, 0% 100%, 0% 35%);
+        }
+
+        /* 타자 (이화용: 안경 낀 통통한 체형) */
+        .batter {
+            position: absolute;
+            top: 15%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.1s;
+        }
+        .batter-body {
+            width: 70px;
+            height: 75px;
+            background: #ea580c;
+            border-radius: 35px 35px 25px 25px;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+        }
+        .batter-head {
+            position: absolute;
+            top: -24px;
+            width: 36px;
+            height: 32px;
+            background: #fcd34d;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .batter-glasses {
+            width: 26px;
+            height: 10px;
+            border: 2px solid #1e293b;
+            border-radius: 2px;
+            background: rgba(255,255,255,0.4);
+        }
+        .batter-bat {
+            position: absolute;
+            right: -22px;
+            top: 15px;
+            width: 8px;
+            height: 70px;
+            background: #94a3b8;
+            border-radius: 4px;
+            transform: rotate(-15deg);
+            transform-origin: top center;
+        }
+
+        /* 야구공 애니메이션용 */
+        .ball {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: radial-gradient(circle at 30% 30%, #ffffff, #cbd5e1);
+            border-radius: 50%;
+            box-shadow: 0 0 8px #ffffff;
+            display: none;
+            z-index: 20;
+        }
+
+        /* 대형 전광판 팝업 (구속 강조) */
+        .radar-popup {
+            position: absolute;
+            top: 8%;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #ef4444;
+            padding: 6px 16px;
+            border-radius: 6px;
+            text-align: center;
+            display: none;
+            z-index: 30;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .radar-speed {
+            font-size: 26px;
+            font-weight: 900;
+            color: #ef4444;
+            letter-spacing: 1px;
+        }
+        .radar-result {
+            font-size: 13px;
+            font-weight: bold;
+            color: #38bdf8;
+            margin-top: 2px;
+        }
+
+        /* 하단 메시지창 */
+        .message-box {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 6px;
+            text-align: center;
+            font-size: 12px;
+            color: #cbd5e1;
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 컨트롤러 및 구종 버튼 영역 */
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .focus-selector {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+        .focus-btn {
+            flex: 1;
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #cbd5e1;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .focus-btn.active {
+            background: #2563eb;
+            border-color: #60a5fa;
+            color: #ffffff;
+        }
+
+        .pitch-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+        }
+        .pitch-btn {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid #3b82f6;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+        }
+        .pitch-btn:active {
+            transform: scale(0.97);
+            background: #1d4ed8;
+        }
+        .pitch-name {
+            font-size: 13px;
+            font-weight: bold;
+            color: #93c5fd;
+        }
+    </style>
 </head>
-<body class="bg-amber-50">
-
-  <canvas id="game-canvas"></canvas>
-
-  <!-- 보스 경고 배너 -->
-  <div id="boss-warning-banner" class="hud-layer top-16 left-0 right-0 z-30 hidden flex justify-center">
-    <div class="boss-alert bg-rose-600/95 border-2 border-amber-300 text-white font-black text-xs md:text-sm px-4 py-2 rounded-2xl shadow-2xl flex items-center gap-2">
-      <span class="text-base">⚠️</span>
-      <span id="boss-warning-text">WARNING! 충치대마왕 출현!</span>
-      <span class="text-base">⚠️</span>
-    </div>
-  </div>
-
-  <!-- 상단 HUD 영역 -->
-  <div class="hud-layer top-0 left-0 right-0 p-3 flex flex-col gap-2 z-10">
-    <div class="flex items-center justify-between w-full max-w-md mx-auto">
-      <div class="interactive bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-amber-200 flex items-center gap-2.5 min-w-0 flex-1 mr-2">
-        <div id="hud-avatar" class="text-2xl filter drop-shadow">👶</div>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-1.5 leading-tight mb-1">
-            <span id="player-name-display" class="font-extrabold text-slate-800 text-sm truncate">유준이</span>
-            <span id="grow-stage-badge" class="text-[10px] bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-md shrink-0">신생아</span>
-            <span id="level-badge" class="text-xs font-black text-amber-600 shrink-0">0세</span>
-          </div>
-          
-          <!-- 체력 게이지 바 (글자 겹침) -->
-          <div class="relative w-full bg-slate-200 h-3.5 rounded-full overflow-hidden border border-slate-300 flex items-center justify-center">
-            <div id="hp-bar" class="absolute left-0 top-0 bottom-0 bg-rose-500 transition-all duration-150" style="width: 100%;"></div>
-            <span id="hp-text" class="relative z-10 text-[9px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] tracking-tight">150 / 150</span>
-          </div>
-
-          <!-- 경험치 게이지 바 (퍼센트만 겹침) -->
-          <div class="relative w-full bg-slate-200 h-3 rounded-full overflow-hidden mt-1 border border-slate-300 flex items-center justify-center">
-            <div id="exp-bar" class="absolute left-0 top-0 bottom-0 bg-amber-400 transition-all duration-150" style="width: 0%;"></div>
-            <span id="exp-text" class="relative z-10 text-[8px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] tracking-tight">EXP 0%</span>
-          </div>
+<body>
+    <div class="container">
+        <!-- 스코어보드 -->
+        <div class="scoreboard">
+            <div class="team-score">조용훈 <span id="score-home" style="color:#ef4444;">0</span></div>
+            <div class="count-status">
+                <div>9회말 투구</div>
+                <div>S <span class="count-dots" id="count-s">0</span> | B <span class="count-dots" id="count-b">0</span> | O <span class="count-dots" id="count-o">0</span></div>
+            </div>
+            <div class="team-score">이화용 <span id="score-away" style="color:#38bdf8;">0</span></div>
         </div>
-      </div>
 
-      <div class="flex items-center gap-1.5 shrink-0">
-        <!-- 보류된 진로 결정 버튼 (돈 더 모으기 선택 시 노출) -->
-        <button id="btn-pending-decision" class="interactive hidden bg-rose-500 text-white font-black text-xs px-2.5 py-2 rounded-2xl shadow-md active:scale-95 animate-pulse flex items-center gap-1 shrink-0">
-          🔔 진로선택
-        </button>
-        <div class="bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-2xl shadow-md border border-amber-200 flex items-center gap-1 shrink-0">
-          <span class="text-base">🪙</span>
-          <span id="coin-count" class="font-black text-slate-800 text-sm tracking-tight">0</span>
+        <!-- 구장 및 시뮬레이터 뷰 -->
+        <div class="stadium-view" id="stadium">
+            <!-- 대형 전광판 구속 및 결과 표시 -->
+            <div class="radar-popup" id="radar-popup">
+                <div class="radar-speed" id="display-speed">0 km/h</div>
+                <div class="radar-result" id="display-result">스트라이크!</div>
+            </div>
+
+            <!-- 타자 -->
+            <div class="batter" id="batter">
+                <div class="batter-head"><div class="batter-glasses"></div></div>
+                <div class="batter-body">
+                    <div class="batter-bat" id="batter-bat"></div>
+                </div>
+            </div>
+
+            <!-- 스트라이크존 -->
+            <div class="strike-zone-container">
+                <div class="zone-cell"></div><div class="zone-cell"></div><div class="zone-cell"></div>
+                <div class="zone-cell"></div><div class="zone-cell"></div><div class="zone-cell"></div>
+                <div class="zone-cell"></div><div class="zone-cell"></div><div class="zone-cell"></div>
+            </div>
+
+            <div class="home-plate"></div>
+            <div class="ball" id="ball"></div>
         </div>
-        <button id="btn-rankings" class="interactive bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-md border border-amber-200 text-slate-700 active:scale-95 transition-transform shrink-0">
-          🏆
-        </button>
-        <button id="btn-shop" class="interactive bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs px-3 py-2 rounded-2xl shadow-md active:scale-95 flex items-center gap-1 shrink-0">
-          🛒 상점
-        </button>
-      </div>
-    </div>
 
-    <!-- 현재 진로 요약 배너 -->
-    <div id="passive-skills-bar" class="flex gap-1.5 justify-center max-w-md mx-auto pointer-events-none"></div>
-  </div>
-
-  <!-- 왼쪽 세로형 장비 바 -->
-  <div id="equip-sidebar" class="equip-drawer hud-layer z-20" style="top: 86px; left: 8px;">
-    <div class="flex items-start">
-      <div class="interactive rounded-2xl p-2 shadow-xl border border-slate-600/50 flex flex-col gap-1 w-[138px] max-h-[58vh] overflow-hidden" style="background-color: rgba(30, 41, 59, 0.78); backdrop-filter: blur(8px);">
-        <div class="flex items-center justify-between pb-1 border-b border-slate-600/60 text-white text-[10px] font-bold">
-          <span class="flex items-center gap-1 text-amber-300">🎒 장착 레벨</span>
-          <span id="equip-count" class="text-slate-300">0/10</span>
+        <!-- 안내 메시지 -->
+        <div class="message-box" id="message">
+            조용훈 투수 등판! 원하시는 구종을 선택하여 투구하세요.
         </div>
-        <div id="equip-slot-container" class="allow-scroll overflow-y-auto pr-0.5 flex flex-col gap-1 text-white text-[10px]">
-          <div class="text-[9px] text-slate-300 text-center py-2">상점에서 아이템을 무한 강화하세요!</div>
+
+        <!-- 구종 선택 패널 (구속 레인지 텍스트 제외, 스크롤 없는 한 화면 최적화) -->
+        <div class="controls-panel">
+            <div class="focus-selector">
+                <button class="focus-btn active" id="focus-corner" onclick="setFocus('corner')">제구 포커스: 코너웍</button>
+                <button class="focus-btn" id="focus-center" onclick="setFocus('center')">제구 포커스: 정중앙 윽박</button>
+            </div>
+            <div class="pitch-buttons">
+                <button class="pitch-btn" onclick="throwPitch('fastball')">
+                    <span class="pitch-name">포심 직구 (Fastball)</span>
+                </button>
+                <button class="pitch-btn" onclick="throwPitch('slider')">
+                    <span class="pitch-name">슬라이더 (Slider)</span>
+                </button>
+                <button class="pitch-btn" onclick="throwPitch('curve')">
+                    <span class="pitch-name">커브 (Curve)</span>
+                </button>
+                <button class="pitch-btn" onclick="throwPitch('forkball')">
+                    <span class="pitch-name">포크볼 (Forkball)</span>
+                </button>
+            </div>
         </div>
-      </div>
-      <button id="btn-toggle-equip" class="interactive bg-amber-500 text-white text-xs font-black w-6 h-9 rounded-r-xl shadow-lg flex items-center justify-center -ml-0.5 mt-2 active:bg-amber-600">
-        &lt;
-      </button>
-    </div>
-  </div>
-
-  <!-- 장비 상세 미니 툴팁 -->
-  <div id="item-tooltip" class="fixed hidden z-50 bg-slate-900/95 text-white p-2.5 rounded-xl shadow-2xl border border-slate-700 max-w-[190px] pointer-events-none text-left">
-    <div id="tt-title" class="font-black text-xs text-amber-300 flex items-center gap-1"></div>
-    <div id="tt-stat" class="text-[10px] text-slate-200 mt-1 font-medium"></div>
-    <div id="tt-type" class="text-[9px] text-slate-400 mt-0.5"></div>
-  </div>
-
-  <!-- 하단 컨트롤 레이어 -->
-  <div class="controls-layer z-20">
-    <div class="interactive joystick-base" id="joystick-base">
-      <div class="joystick-thumb" id="joystick-thumb"></div>
     </div>
 
-    <div class="interactive grid grid-cols-2 gap-2">
-      <button id="btn-skill-poop" class="skill-btn bg-amber-800/95 text-white p-1.5 rounded-2xl shadow-lg border-2 border-amber-600 flex flex-col items-center justify-center w-16 h-16 relative">
-        <span id="icon-skill-poop" class="text-xl">💩</span>
-        <span id="name-skill-poop" class="text-[8px] font-black mt-0.5 leading-none">똥폭탄</span>
-        <span id="dmg-skill-poop" class="text-[7px] text-amber-300 font-bold leading-none mt-0.5">ATK 0</span>
-        <div id="cool-poop" class="absolute inset-0 bg-black/60 rounded-2xl hidden flex items-center justify-center font-black text-xs text-white">0s</div>
-      </button>
-
-      <button id="btn-skill-fart" class="skill-btn bg-emerald-600/95 text-white p-1.5 rounded-2xl shadow-lg border-2 border-emerald-400 flex flex-col items-center justify-center w-16 h-16 relative">
-        <span id="icon-skill-fart" class="text-xl">💨</span>
-        <span id="name-skill-fart" class="text-[8px] font-black mt-0.5 leading-none">방귀</span>
-        <span id="dmg-skill-fart" class="text-[7px] text-emerald-200 font-bold leading-none mt-0.5">ATK 0</span>
-        <div id="cool-fart" class="absolute inset-0 bg-black/60 rounded-2xl hidden flex items-center justify-center font-black text-xs text-white">0s</div>
-      </button>
-
-      <button id="btn-skill-cry" class="skill-btn bg-blue-600/95 text-white p-1.5 rounded-2xl shadow-lg border-2 border-blue-400 flex flex-col items-center justify-center w-16 h-16 relative">
-        <span id="icon-skill-cry" class="text-xl">😭</span>
-        <span id="name-skill-cry" class="text-[8px] font-black mt-0.5 leading-none">울음</span>
-        <span id="dmg-skill-cry" class="text-[7px] text-blue-200 font-bold leading-none mt-0.5">ATK 0</span>
-        <div id="cool-cry" class="absolute inset-0 bg-black/60 rounded-2xl hidden flex items-center justify-center font-black text-xs text-white">0s</div>
-      </button>
-
-      <button id="btn-attack" class="skill-btn bg-gradient-to-tr from-pink-500 to-rose-400 text-white p-1.5 rounded-2xl shadow-xl border-2 border-white flex flex-col items-center justify-center w-16 h-16">
-        <span id="atk-btn-icon" class="text-xl">🍼</span>
-        <span id="atk-btn-text" class="text-[8px] font-black mt-0.5 leading-none">분유던지기</span>
-        <span id="dmg-atk-btn" class="text-[7px] text-pink-200 font-bold leading-none mt-0.5">ATK 0</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- 상점 모달창 -->
-  <div id="shop-modal" class="fixed inset-0 modal-overlay z-40 hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col max-h-[84vh] overflow-hidden border-4 border-amber-300">
-      <div class="bg-gradient-to-r from-amber-400 to-orange-400 p-3.5 text-white flex items-center justify-between shrink-0">
-        <div>
-          <h2 class="font-black text-base flex items-center gap-1.5">🛍️ 유준이 무한 육아 백화점</h2>
-          <p class="text-[10px] text-amber-100 font-medium">아이템 레벨을 무한히 올려 강력해지는 적들을 물리치세요!</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="bg-black/20 px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1">
-            <span>🪙</span>
-            <span id="modal-coin">0</span>
-          </div>
-          <button id="btn-close-shop" class="text-white bg-black/20 hover:bg-black/40 rounded-full w-7 h-7 flex items-center justify-center font-black">✕</button>
-        </div>
-      </div>
-      <div id="shop-item-list" class="allow-scroll flex-1 overflow-y-auto p-3 flex flex-col gap-2 pb-16"></div>
-    </div>
-  </div>
-
-  <!-- 랭킹 모달창 -->
-  <div id="rank-modal" class="fixed inset-0 modal-overlay z-40 hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl flex flex-col max-h-[75vh] overflow-hidden border-4 border-amber-300">
-      <div class="bg-amber-400 p-3.5 text-white flex items-center justify-between shrink-0">
-        <h2 class="font-black text-base flex items-center gap-1.5">🏆 실시간 명예의 전당</h2>
-        <button id="btn-close-rank" class="text-white bg-black/20 hover:bg-black/40 rounded-full w-7 h-7 flex items-center justify-center font-black">✕</button>
-      </div>
-      <div id="rank-list" class="allow-scroll flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
-    </div>
-  </div>
-
-  <!-- 첫 화면 모달 -->
-  <div id="start-modal" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-5 border-4 border-amber-300 text-center flex flex-col max-h-[90vh] overflow-hidden">
-      <div class="text-4xl mb-1">👶</div>
-      <h1 class="text-lg font-black text-slate-800 leading-tight">유준이 키우기: 인생 어드벤처</h1>
-      <p class="text-[11px] text-slate-500 mt-0.5">0세 신생아부터 직장인까지 성장하세요!<br><span class="text-rose-500 font-bold">※ 사망 시 나이와 장비가 초기화됩니다!</span></p>
-      
-      <div class="mt-3 text-left">
-        <label class="text-[11px] font-bold text-slate-600 block mb-1">플레이어 / 보호자 닉네임</label>
-        <input type="text" id="player-nickname-input" maxlength="8" placeholder="닉네임을 입력하세요" class="w-full px-3 py-2 border-2 border-amber-300 rounded-xl font-bold text-sm text-slate-800 focus:outline-none focus:border-amber-500" value="">
-      </div>
-
-      <button id="btn-start-game" class="w-full mt-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black py-2.5 rounded-2xl shadow-md active:scale-95 transition-transform text-xs">
-        🍼 인생 시작하기 (0세)
-      </button>
-
-      <div class="mt-3 pt-3 border-t border-slate-100 flex-1 overflow-hidden flex flex-col text-left">
-        <div class="text-[11px] font-black text-amber-700 flex items-center justify-between mb-1.5">
-          <span class="flex items-center gap-1">🌐 실시간 랭킹 Top 5</span>
-          <span id="rank-sync-status" class="text-[9px] text-emerald-600 font-semibold">동기화 완료</span>
-        </div>
-        <div id="start-rank-preview" class="allow-scroll flex-1 overflow-y-auto space-y-1.5 pr-0.5 max-h-[145px]"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 나이별 인생 진로 선택 모달창 (돈 더 모으기 버튼 추가) -->
-  <div id="life-choice-modal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-5 border-4 border-amber-400 text-center flex flex-col max-h-[88vh] overflow-hidden">
-      <div id="life-modal-icon" class="text-4xl mb-1">🏫</div>
-      <h3 id="life-modal-age" class="text-xs font-black text-amber-500 tracking-wider">8세 도달!</h3>
-      <h2 id="life-modal-title" class="text-base font-black text-slate-800 mt-0.5">인생의 갈림길: 초등학교 입학</h2>
-      <p id="life-modal-desc" class="text-[11px] text-slate-500 mt-1 mb-2">원하는 진로를 선택하거나, 돈을 더 모으고 결정할 수 있습니다.</p>
-      
-      <div id="life-choice-list" class="allow-scroll flex-1 overflow-y-auto space-y-2 pr-0.5 text-left pb-2">
-        <!-- 진로 선택지 -->
-      </div>
-
-      <!-- 돈 더 모으기 버튼 -->
-      <button id="btn-postpone-decision" class="w-full mt-2 bg-slate-800 hover:bg-slate-900 text-amber-300 font-black py-2.5 rounded-2xl shadow-md active:scale-95 transition-transform text-xs flex items-center justify-center gap-1">
-        <span>💰</span> 결정을 미루고 돈 더 모으기 (파밍 계속)
-      </button>
-    </div>
-  </div>
-
-  <!-- 게임 오버 모달 -->
-  <div id="gameover-modal" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-5 border-4 border-rose-400 text-center">
-      <div class="text-5xl mb-2">😢</div>
-      <h2 class="text-xl font-black text-slate-800">모험이 끝났습니다</h2>
-      <p id="over-stage-text" class="text-xs text-slate-500 mt-0.5"></p>
-      
-      <div class="bg-rose-50 border border-rose-200 rounded-2xl p-3 my-3">
-        <div class="text-[11px] text-rose-700 font-bold">최종 획득 점수</div>
-        <div id="final-score" class="text-2xl font-black text-slate-800">0 P</div>
-        <div id="final-stats" class="text-[10px] text-slate-500 mt-1"></div>
-        <div class="text-[10px] text-rose-500 font-bold mt-1.5 pt-1 border-t border-rose-200">※ 나이(0세), 코인, 장비가 초기화되었습니다!</div>
-      </div>
-
-      <button id="btn-kakao-share" class="w-full bg-[#FEE500] hover:bg-[#FDD835] text-[#3c1e1e] font-black py-2.5 rounded-2xl shadow-md active:scale-95 transition-transform text-xs flex items-center justify-center gap-1.5 mb-2">
-        <span class="text-sm">💬</span> 결과 & 게임 링크 카톡 공유하기
-      </button>
-
-      <button id="btn-restart" class="w-full bg-slate-800 text-white font-black py-2.5 rounded-2xl shadow-md active:scale-95 transition-transform text-xs">
-        🔄 0세부터 다시 환생하기
-      </button>
-    </div>
-  </div>
-
-  <script>
-    const Sound = {
-      ctx: null,
-      init() {
-        if (!this.ctx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          if (AudioContext) this.ctx = new AudioContext();
-        }
-        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
-      },
-      play(type) {
-        if (!this.ctx) return;
-        try {
-          const t = this.ctx.currentTime;
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-
-          if (type === 'shoot') {
-            osc.frequency.setValueAtTime(520, t);
-            osc.frequency.exponentialRampToValueAtTime(180, t + 0.1);
-            gain.gain.setValueAtTime(0.2, t);
-            gain.gain.linearRampToValueAtTime(0.01, t + 0.1);
-            osc.start(t); osc.stop(t + 0.1);
-          } else if (type === 'hit') {
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(140, t);
-            osc.frequency.linearRampToValueAtTime(60, t + 0.08);
-            gain.gain.setValueAtTime(0.25, t);
-            gain.gain.linearRampToValueAtTime(0.01, t + 0.08);
-            osc.start(t); osc.stop(t + 0.08);
-          } else if (type === 'fart') {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(120, t);
-            osc.frequency.exponentialRampToValueAtTime(35, t + 0.35);
-            gain.gain.setValueAtTime(0.4, t);
-            gain.gain.linearRampToValueAtTime(0.01, t + 0.35);
-            osc.start(t); osc.stop(t + 0.35);
-          } else if (type === 'poop') {
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(260, t);
-            osc.frequency.exponentialRampToValueAtTime(70, t + 0.32);
-            gain.gain.setValueAtTime(0.4, t);
-            gain.gain.linearRampToValueAtTime(0.01, t + 0.32);
-            osc.start(t); osc.stop(t + 0.32);
-          } else if (type === 'cry') {
-            osc.frequency.setValueAtTime(600, t);
-            osc.frequency.linearRampToValueAtTime(950, t + 0.25);
-            osc.frequency.linearRampToValueAtTime(450, t + 0.5);
-            gain.gain.setValueAtTime(0.4, t);
-            gain.gain.linearRampToValueAtTime(0.01, t + 0.5);
-            osc.start(t); osc.stop(t + 0.5);
-          } else if (type === 'coin') {
-            osc.frequency.setValueAtTime(950, t);
-            osc.frequency.setValueAtTime(1300, t + 0.08);
-            gain.gain.setValueAtTime(0.25, t);
-            gain.gain.linearRampToValueAtTime(0.01, t + 0.16);
-            osc.start(t); osc.stop(t + 0.16);
-          } else if (type === 'event_fanfare') {
-            [523, 659, 783, 1046].forEach((freq, idx) => {
-              const o = this.ctx.createOscillator();
-              const g = this.ctx.createGain();
-              o.connect(g); g.connect(this.ctx.destination);
-              o.frequency.setValueAtTime(freq, t + idx * 0.09);
-              g.gain.setValueAtTime(0.25, t + idx * 0.09);
-              g.gain.linearRampToValueAtTime(0.01, t + idx * 0.09 + 0.25);
-              o.start(t + idx * 0.09); o.stop(t + idx * 0.09 + 0.25);
-            });
-          }
-        } catch(e) {}
-      }
-    };
-
-    const WORLD_WIDTH = 2400;
-    const WORLD_HEIGHT = 2400;
-
-    const ITEMS_DATA = [
-      { id: "diaper", name: "기저귀", icon: "🧷", attr: "위생 / 쾌적함", baseCost: 50, costScale: 1.35, desc: "Lv당 초당 HP +2.5 재생, 방어력 +2.0" },
-      { id: "swaddle", name: "속싸개", icon: "🧣", attr: "안정감 / 수면", baseCost: 60, costScale: 1.38, desc: "Lv당 받는 피해 3.5% 추가 감소" },
-      { id: "clothes", name: "아기 옷", icon: "👕", attr: "패션 / 인기", baseCost: 70, costScale: 1.35, desc: "Lv당 치명타율 +3.5%, 치명피해 +0.18배" },
-      { id: "bottle", name: "젖병", icon: "🍼", attr: "포만감 / 성장", baseCost: 60, costScale: 1.35, desc: "Lv당 기본 공격력 +15, 탄속 증가" },
-      { id: "bed", name: "아기 침대", icon: "🛏️", attr: "수면 / 회복력", baseCost: 80, costScale: 1.38, desc: "Lv당 최대 체력 +55" },
-      { id: "stroller", name: "유모차", icon: "🚼", attr: "외출 경험치 / 행복", baseCost: 70, costScale: 1.38, desc: "Lv당 이동속도 +18px/s" },
-      { id: "toy", name: "장난감", icon: "🪇", attr: "지능 / 감각 / 행복", baseCost: 75, costScale: 1.35, desc: "Lv당 스킬 쿨타임 5% 감소, 폭탄 범위 증가" },
-      { id: "wipes", name: "물티슈", icon: "🧻", attr: "위생 / 건강", baseCost: 65, costScale: 1.35, desc: "Lv당 적 처치 시 체력 +3 즉시 회복" },
-      { id: "bath", name: "목욕용품", icon: "🛁", attr: "위생 / 행복", baseCost: 80, costScale: 1.4, desc: "Lv당 코인 및 경험치 획득량 +15%" },
-      { id: "babyfood", name: "이유식 용품", icon: "🥣", attr: "건강 / 성장", baseCost: 90, costScale: 1.38, desc: "Lv당 전체 데미지 12% 추가 증폭" }
-    ];
-
-    function getItemCost(item, level) {
-      return Math.round(item.baseCost * Math.pow(item.costScale, level));
-    }
-
-    const LIFE_STAGES = [
-      { minAge: 0, maxAge: 7, name: "영유아", icon: "👶", atkName: "분유던지기", atkIcon: "🍼" },
-      { minAge: 8, maxAge: 13, name: "초등학생", icon: "🧒", atkName: "지우개/연필", atkIcon: "✏️" },
-      { minAge: 14, maxAge: 16, name: "중학생", icon: "🧑", atkName: "샤프심난사", atkIcon: "✒️" },
-      { minAge: 17, maxAge: 19, name: "고등학생", icon: "🧑‍🎓", atkName: "수능컴싸", atkIcon: "🖍️" },
-      { minAge: 20, maxAge: 20, name: "대학생", icon: "🎒", atkName: "전공서적", atkIcon: "📚" },
-      { minAge: 21, maxAge: 21, name: "군인", icon: "🪖", atkName: "K2소총사격", atkIcon: "💥" },
-      { minAge: 22, maxAge: 24, name: "예비군/취준생", icon: "☕", atkName: "이력서투척", atkIcon: "📄" },
-      { minAge: 25, maxAge: 99, name: "직장인", icon: "💼", atkName: "사원증빔", atkIcon: "💳" }
-    ];
-
-    const LIFE_EVENTS = {
-      8: {
-        icon: "🏫", ageStr: "8세 초등학교 입학", title: "인생의 첫 학교 선택",
-        choices: [
-          { name: "동네 일반초", cost: 0, desc: "무료! 기본 급식 식판 투척 스킬 획득", perk: "급식어택", pwr: 1.0 },
-          { name: "명문 사립초", cost: 250, desc: "250🪙 오케스트라 음파로 적 이동속도 -40%", perk: "사립오케스트라", pwr: 1.4 },
-          { name: "국제학교 / 조기유학", cost: 600, desc: "600🪙 프리토킹 알파벳 3방향 연사 탄환!", perk: "프리토킹", pwr: 2.0 }
-        ]
-      },
-      14: {
-        icon: "🎒", ageStr: "14세 중학교 입학", title: "질풍노도의 사춘기",
-        choices: [
-          { name: "일반 중학교", cost: 0, desc: "무료! 중2병 질풍노도 발차기 돌진 넉백", perk: "질풍노도", pwr: 1.0 },
-          { name: "특목고 대비반", cost: 450, desc: "450🪙 오답노트 배리어: 받는 피해 25% 상시 흡수", perk: "오답노트", pwr: 1.5 },
-          { name: "체육/예술 중학교", cost: 1100, desc: "1100🪙 파워 축구공 슛: 벽을 튕기며 적 관통", perk: "파워슛", pwr: 2.2 }
-        ]
-      },
-      17: {
-        icon: "📚", ageStr: "17세 고등학교 진학", title: "입시와 진로의 갈림길",
-        choices: [
-          { name: "특성화고(실업계)", cost: 0, desc: "무료! 장비 강화비용 20% 영구 할인 & 스패너 투척", perk: "자격증마스터", pwr: 1.0 },
-          { name: "일반 인문계고", cost: 700, desc: "700🪙 수능 컴싸 난사: 부채꼴 7연발 탄환", perk: "컴싸난사", pwr: 1.6 },
-          { name: "과학고/영재고", cost: 1800, desc: "1800🪙 양자역학 블랙홀: 적들을 중심부로 흡인", perk: "양자블랙홀", pwr: 2.5 }
-        ]
-      },
-      20: {
-        icon: "🎓", ageStr: "20세 대학 진학", title: "캠퍼스 라이프와 사회 진출",
-        choices: [
-          { name: "전문대/취업준비", cost: 0, desc: "무료! 칼퇴근 부스터: 이동속도 +35px/s 상시 증가", perk: "칼퇴근", pwr: 1.0 },
-          { name: "국립대학교", cost: 1200, desc: "1200🪙 든든한 등록금: 최대 체력 +300 & 공격력 증폭", perk: "국립대장학", pwr: 1.7 },
-          { name: "명문 SKY / 아이비리그", cost: 3200, desc: "3200🪙 올A+ 메테오: 거대한 황금 A+ 비석 소환", perk: "올A메테오", pwr: 2.8 }
-        ]
-      },
-      21: {
-        icon: "🪖", ageStr: "21세 국방의 의무", title: "군대 입대!",
-        choices: [
-          { name: "대한민국 육군 (보병)", cost: 0, desc: "무료! K2 소총 6점사 폭풍 관통 사격", perk: "육군보병", pwr: 1.0 },
-          { name: "해군 (함정근무)", cost: 800, desc: "800🪙 함포 지원 포격: 지정 지점 거대 물기둥 폭발", perk: "해군함포", pwr: 1.8 },
-          { name: "공군 (기술행정)", cost: 1500, desc: "1500🪙 전투기 F-15K 출격: 전 필드 융단 폭격", perk: "공군폭격", pwr: 2.4 },
-          { name: "카투사 / 어학병", cost: 2800, desc: "2800🪙 미군 레이션 박스: 주기적으로 체력 완전회복", perk: "카투사키트", pwr: 2.8 }
-        ]
-      },
-      22: {
-        icon: "🎖️", ageStr: "22세 군대 만기전역", title: "빛나는 군필 예비군!",
-        choices: [
-          { name: "늠름한 예비군 1년차", cost: 0, desc: "전역 축하! 모든 공격력 & 체력 +30% 영구 보너스!", perk: "예비군각성", pwr: 1.3 }
-        ]
-      },
-      25: {
-        icon: "💼", ageStr: "25세 사회 진출", title: "본격적인 직장인 생활",
-        choices: [
-          { name: "중소기업 올라운더", cost: 0, desc: "무료! 야근의 분노: 체력 35% 이하 시 공속 2.5배", perk: "야근분노", pwr: 1.0 },
-          { name: "공기업 / 공무원", cost: 1500, desc: "1500🪙 철밥통 쉴드: 6초마다 피해 무효화 쉴드", perk: "철밥통", pwr: 1.8 },
-          { name: "대기업 / 스타트업 대표", cost: 4000, desc: "4000🪙 법카 골드 폭격: 황금 골드를 난사해 싹쓸이", perk: "법카폭격", pwr: 3.0 }
-        ]
-      }
-    };
-
-    const state = {
-      playerName: "익명의 수호자",
-      coins: 0,
-      score: 0,
-      itemLevels: {},
-      kills: 0,
-      isPaused: true,
-      isGameOver: false,
-      equipDrawerOpen: true,
-      selectedLifePerks: [],
-      pendingEventAge: null // 보류된 나이 이벤트 기억
-    };
-
-    const player = {
-      x: WORLD_WIDTH / 2,
-      y: WORLD_HEIGHT / 2,
-      baseSpeed: 195,
-      age: 0,
-      exp: 0, maxExp: 100,
-      hp: 150, maxHp: 150,
-      dirX: 0, dirY: -1,
-      isMoving: false,
-      walkCycle: 0,
-      isAttacking: false,
-      attackTimer: 0
-    };
-
-    const camera = {
-      x: (WORLD_WIDTH - 360) / 2,
-      y: (WORLD_HEIGHT - 640) / 2
-    };
-
-    const cooldowns = { poop: 0, fart: 0, cry: 0 };
-    let enemies = [];
-    let projectiles = [];
-    let bossProjectiles = [];
-    let particles = [];
-    let damageTexts = [];
-    let worldCoins = [];
-
-    const canvas = document.getElementById('game-canvas');
-    const ctx = canvas.getContext('2d');
-    let width = 360;
-    let height = 640;
-
-    function resize() {
-      width = window.innerWidth || 360;
-      height = window.innerHeight || 640;
-      canvas.width = width;
-      canvas.height = height;
-
-      if (player && player.x) {
-        camera.x = player.x - width / 2;
-        camera.y = player.y - height / 2;
-      }
-    }
-    window.addEventListener('resize', resize);
-    window.addEventListener('orientationchange', () => setTimeout(resize, 200));
-    resize();
-
-    function getCurrentStage() {
-      const age = player.age;
-      for (const st of LIFE_STAGES) {
-        if (age >= st.minAge && age <= st.maxAge) return st;
-      }
-      return LIFE_STAGES[LIFE_STAGES.length - 1];
-    }
-
-    function calcStats() {
-      const getL = (id) => state.itemLevels[id] || 0;
-
-      let stats = {
-        maxHp: 150 + player.age * 25 + getL('bed') * 55,
-        hpRegen: getL('diaper') * 2.5,
-        def: getL('diaper') * 2.0,
-        dmgReduction: Math.min(0.75, getL('swaddle') * 0.035),
-        critRate: Math.min(0.85, 0.08 + getL('clothes') * 0.035),
-        critDmg: 1.6 + getL('clothes') * 0.18,
-        atk: 32 + player.age * 5 + getL('bottle') * 15,
-        projSpeed: 480 + getL('bottle') * 20,
-        speedBonus: getL('stroller') * 18,
-        coolReduce: Math.min(0.70, getL('toy') * 0.05),
-        bombRadius: 1 + getL('toy') * 0.14,
-        lifeSteal: getL('wipes') * 3,
-        coinBonus: getL('bath') * 0.15,
-        expBonus: getL('bath') * 0.15,
-        dmgAmp: getL('babyfood') * 0.12,
-        clothColor: "#fde047"
-      };
-
-      if (state.selectedLifePerks.some(p => p.perk === "예비군각성")) {
-        stats.atk *= 1.3;
-        stats.maxHp *= 1.3;
-      }
-      if (state.selectedLifePerks.some(p => p.perk === "칼퇴근")) {
-        stats.speedBonus += 35;
-      }
-
-      if (getL('clothes') >= 5) stats.clothColor = "#a7f3d0";
-      if (getL('clothes') >= 10) stats.clothColor = "#fbcfe8";
-      if (getL('clothes') >= 20) stats.clothColor = "#c084fc";
-
-      return stats;
-    }
-
-    function getSkillEvolutions() {
-      const age = player.age;
-      let fart = { tier: 1, name: "방귀", icon: "💨", rad: 100, pwr: 2.0 };
-      if (age >= 20) fart = { tier: 3, name: "토네이도방귀", icon: "🌀", rad: 220, pwr: 4.5 };
-      else if (age >= 10) fart = { tier: 2, name: "슈퍼방귀", icon: "🌪️", rad: 155, pwr: 3.0 };
-
-      let poop = { tier: 1, name: "똥폭탄", icon: "💩", rad: 125, pwr: 3.6 };
-      if (age >= 20) poop = { tier: 3, name: "똥의노래", icon: "🎶", rad: 250, pwr: 7.2 };
-      else if (age >= 10) poop = { tier: 2, name: "설사폭탄", icon: "💥", rad: 180, pwr: 5.2 };
-
-      let cry = { tier: 1, name: "울음", icon: "😭", stun: 1.8, pwr: 4.0 };
-      if (age >= 20) cry = { tier: 3, name: "대성통곡", icon: "⚡😭", stun: 3.2, pwr: 8.0 };
-      else if (age >= 10) cry = { tier: 2, name: "강성울음", icon: "🌊", stun: 2.5, pwr: 5.8 };
-
-      return { fart, poop, cry };
-    }
-
-    /* ========================================================
-       조이스틱 & 컨트롤러
-       ======================================================== */
-    const joyBase = document.getElementById('joystick-base');
-    const joyThumb = document.getElementById('joystick-thumb');
-    let joyTouchId = null;
-    let joyVector = { x: 0, y: 0 };
-
-    joyBase.addEventListener('touchstart', (e) => {
-      e.preventDefault(); Sound.init();
-      if (joyTouchId !== null) return;
-      const touch = e.changedTouches[0];
-      joyTouchId = touch.identifier;
-      updateJoystick(touch.clientX, touch.clientY);
-    }, { passive: false });
-
-    window.addEventListener('touchmove', (e) => {
-      if (joyTouchId === null) return;
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        if (e.changedTouches[i].identifier === joyTouchId) {
-          updateJoystick(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
-          break;
-        }
-      }
-    }, { passive: false });
-
-    function resetJoystick() {
-      joyTouchId = null;
-      joyVector = { x: 0, y: 0 };
-      joyThumb.style.transform = `translate(-50%, -50%)`;
-      player.isMoving = false;
-    }
-
-    window.addEventListener('touchend', (e) => {
-      if (joyTouchId === null) return;
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        if (e.changedTouches[i].identifier === joyTouchId) {
-          resetJoystick();
-          break;
-        }
-      }
-    });
-
-    function updateJoystick(clientX, clientY) {
-      const rect = joyBase.getBoundingClientRect();
-      const dx = clientX - (rect.left + rect.width / 2);
-      const dy = clientY - (rect.top + rect.height / 2);
-      const dist = Math.hypot(dx, dy);
-      const maxR = rect.width / 2 - 10;
-
-      if (dist === 0) {
-        joyVector = { x: 0, y: 0 };
-        joyThumb.style.transform = `translate(-50%, -50%)`;
-        player.isMoving = false;
-        return;
-      }
-
-      const clampedDist = Math.min(dist, maxR);
-      const nx = dx / dist;
-      const ny = dy / dist;
-
-      joyVector = { x: nx * (clampedDist / maxR), y: ny * (clampedDist / maxR) };
-      joyThumb.style.transform = `translate(calc(-50% + ${nx * clampedDist}px), calc(-50% + ${ny * clampedDist}px))`;
-      
-      player.dirX = nx;
-      player.dirY = ny;
-      player.isMoving = true;
-    }
-
-    const keys = {};
-    window.addEventListener('keydown', (e) => {
-      keys[e.key.toLowerCase()] = true;
-      if (e.code === 'Space') player.isAttacking = true;
-      if (e.key === '1' || e.key === 'q') triggerPoop();
-      if (e.key === '2' || e.key === 'e') triggerFart();
-      if (e.key === '3' || e.key === 'r') triggerCry();
-    });
-    window.addEventListener('keyup', (e) => {
-      keys[e.key.toLowerCase()] = false;
-      if (e.code === 'Space') player.isAttacking = false;
-    });
-
-    const atkBtn = document.getElementById('btn-attack');
-    atkBtn.addEventListener('touchstart', (e) => {
-      e.preventDefault(); Sound.init();
-      player.isAttacking = true;
-      tryShoot();
-    }, { passive: false });
-
-    window.addEventListener('touchend', (e) => {
-      let stillAtk = false;
-      for (let i = 0; i < e.touches.length; i++) {
-        if (e.touches[i].target === atkBtn || atkBtn.contains(e.touches[i].target)) {
-          stillAtk = true; break;
-        }
-      }
-      if (!stillAtk) player.isAttacking = false;
-    });
-
-    atkBtn.addEventListener('mousedown', (e) => {
-      e.preventDefault(); Sound.init();
-      player.isAttacking = true;
-      tryShoot();
-    });
-    window.addEventListener('mouseup', () => { player.isAttacking = false; });
-
-    document.getElementById('btn-skill-poop').addEventListener('click', triggerPoop);
-    document.getElementById('btn-skill-fart').addEventListener('click', triggerFart);
-    document.getElementById('btn-skill-cry').addEventListener('click', triggerCry);
-
-    function getNearestEnemy() {
-      let nearest = null;
-      let minDist = Infinity;
-      for (const en of enemies) {
-        if (en.dead) continue;
-        const d = Math.hypot(en.x - player.x, en.y - player.y);
-        if (d < minDist) {
-          minDist = d;
-          nearest = en;
-        }
-      }
-      return nearest;
-    }
-
-    /* ========================================================
-       스킬 & 공격
-       ======================================================== */
-    function tryShoot() {
-      if (state.isPaused || state.isGameOver || player.attackTimer > 0) return;
-      const stats = calcStats();
-      const current = getCurrentStage();
-
-      const target = getNearestEnemy();
-      let angle = target ? Math.atan2(target.y - player.y, target.x - player.x) : Math.atan2(player.dirY, player.dirX);
-      if (target) {
-        player.dirX = Math.cos(angle);
-        player.dirY = Math.sin(angle);
-      }
-
-      Sound.play('shoot');
-
-      const speed = stats.projSpeed;
-      const createProj = (ang) => ({
-        x: player.x, y: player.y,
-        vx: Math.cos(ang) * speed,
-        vy: Math.sin(ang) * speed,
-        damage: stats.atk * (1 + stats.dmgAmp),
-        critRate: stats.critRate,
-        critDmg: stats.critDmg,
-        pierce: player.age >= 17 ? 2 : 0,
-        type: current.atkIcon,
-        radius: 13,
-        life: 1.6
-      });
-
-      if (player.age >= 14) {
-        projectiles.push(createProj(angle - 0.22));
-        projectiles.push(createProj(angle));
-        projectiles.push(createProj(angle + 0.22));
-      } else {
-        projectiles.push(createProj(angle));
-      }
-
-      player.attackTimer = 0.20;
-    }
-
-    function triggerPoop() {
-      if (state.isPaused || state.isGameOver || cooldowns.poop > 0) return;
-      const stats = calcStats();
-      const { poop } = getSkillEvolutions();
-      Sound.play('poop');
-      
-      const rad = poop.rad * stats.bombRadius;
-      particles.push({ 
-        type: 'poop-blast', 
-        x: player.x, y: player.y, 
-        radius: 10, maxRadius: rad, 
-        alpha: 1, 
-        tier: poop.tier,
-        icon: poop.icon 
-      });
-
-      for (let i = 0; i < (poop.tier === 3 ? 16 : 10); i++) {
-        const pang = Math.random() * Math.PI * 2;
-        const pspd = 120 + Math.random() * 240;
-        particles.push({
-          type: 'poop-debris',
-          x: player.x, y: player.y,
-          vx: Math.cos(pang) * pspd,
-          vy: Math.sin(pang) * pspd,
-          size: 6 + Math.random() * 8,
-          alpha: 1, life: 0.6 + Math.random() * 0.4
-        });
-      }
-
-      enemies.forEach(en => {
-        const d = Math.hypot(en.x - player.x, en.y - player.y);
-        if (d <= rad) applyDamage(en, stats.atk * poop.pwr * (1 + stats.dmgAmp), false, poop.icon);
-      });
-
-      cooldowns.poop = 5.0 * (1 - stats.coolReduce);
-    }
-
-    function triggerFart() {
-      if (state.isPaused || state.isGameOver || cooldowns.fart > 0) return;
-      const stats = calcStats();
-      const { fart } = getSkillEvolutions();
-      Sound.play('fart');
-
-      particles.push({ 
-        type: 'fart-cloud', 
-        x: player.x - player.dirX * 30, y: player.y - player.dirY * 30, 
-        radius: 15, maxRadius: fart.rad, 
-        alpha: 0.95, 
-        tier: fart.tier,
-        icon: fart.icon 
-      });
-
-      for (let i = 0; i < 14; i++) {
-        const fang = Math.atan2(-player.dirY, -player.dirX) + (Math.random() - 0.5) * 1.5;
-        const fspd = 80 + Math.random() * 180;
-        particles.push({
-          type: 'fart-gas',
-          x: player.x, y: player.y,
-          vx: Math.cos(fang) * fspd,
-          vy: Math.sin(fang) * fspd,
-          radius: 12 + Math.random() * 16,
-          alpha: 0.8, life: 0.7
-        });
-      }
-
-      enemies.forEach(en => {
-        const d = Math.hypot(en.x - player.x, en.y - player.y);
-        if (d < fart.rad + 40) {
-          const pushDist = fart.tier === 3 ? 200 : (fart.tier === 2 ? 150 : 100);
-          en.x += player.dirX * pushDist;
-          en.y += player.dirY * pushDist;
-          applyDamage(en, stats.atk * fart.pwr * (1 + stats.dmgAmp), false, fart.icon);
-        }
-      });
-
-      player.x += player.dirX * (fart.tier >= 2 ? 65 : 45);
-      player.y += player.dirY * (fart.tier >= 2 ? 65 : 45);
-      cooldowns.fart = 4.0 * (1 - stats.coolReduce);
-    }
-
-    function triggerCry() {
-      if (state.isPaused || state.isGameOver || cooldowns.cry > 0) return;
-      const stats = calcStats();
-      const { cry } = getSkillEvolutions();
-      Sound.play('cry');
-
-      particles.push({ 
-        type: 'cry-wave', 
-        x: player.x, y: player.y, 
-        radius: 20, maxRadius: width * (cry.tier === 3 ? 1.2 : (cry.tier === 2 ? 0.95 : 0.75)), 
-        alpha: 1, 
-        tier: cry.tier,
-        icon: cry.icon 
-      });
-
-      enemies.forEach(en => {
-        applyDamage(en, stats.atk * cry.pwr * (1 + stats.dmgAmp), true, cry.icon);
-        en.stunTimer = cry.stun;
-      });
-
-      cooldowns.cry = 8.0 * (1 - stats.coolReduce);
-    }
-
-    function applyDamage(enemy, baseDmg, isCritBonus, icon) {
-      if (!enemy || enemy.dead) return;
-      const stats = calcStats();
-      const isCrit = Math.random() < stats.critRate;
-      let finalDmg = Math.round(isCrit ? baseDmg * stats.critDmg : baseDmg);
-
-      enemy.hp -= finalDmg;
-
-      damageTexts.push({
-        text: (isCrit ? "CRIT! " : "") + finalDmg + (icon ? ` ${icon}` : ""),
-        x: enemy.x + (Math.random() - 0.5) * 20,
-        y: enemy.y - 15,
-        color: isCrit ? "#f43f5e" : "#fbbf24",
-        scale: isCrit ? 1.4 : 1.0,
-        alpha: 1, life: 0.6
-      });
-
-      Sound.play('hit');
-
-      if (enemy.hp <= 0 && !enemy.dead) {
-        enemy.dead = true;
-        state.kills++;
-        state.score += (enemy.scoreVal || 50);
-
-        if (stats.lifeSteal > 0) player.hp = Math.min(stats.maxHp, player.hp + stats.lifeSteal);
-
-        const coinBase = enemy.coinVal || 6;
-        const earnedCoin = Math.max(1, Math.round(coinBase * (1 + stats.coinBonus)));
-        const expBase = enemy.expVal || 35;
-        const earnedExp = Math.max(20, Math.round(expBase * (1 + stats.expBonus)));
-
-        for (let i = 0; i < Math.min(earnedCoin, 5); i++) {
-          worldCoins.push({
-            x: enemy.x + (Math.random() - 0.5) * 25,
-            y: enemy.y + (Math.random() - 0.5) * 25,
-            val: Math.ceil(earnedCoin / Math.min(earnedCoin, 5)),
-            spd: 200 + Math.random() * 150
-          });
+    <script>
+        let currentFocus = 'corner';
+        let isPitching = false;
+        let strikes = 0;
+        let balls = 0;
+        let outs = 0;
+        let awayScore = 0;
+
+        function setFocus(type) {
+            currentFocus = type;
+            document.getElementById('focus-corner').classList.toggle('active', type === 'corner');
+            document.getElementById('focus-center').classList.toggle('active', type === 'center');
         }
 
-        gainExp(earnedExp);
-      }
-    }
+        function throwPitch(type) {
+            if (isPitching) return;
+            isPitching = true;
 
-    function gainExp(amount) {
-      if (typeof amount !== 'number' || isNaN(amount) || amount <= 0) return;
-      
-      player.exp = (player.exp || 0) + amount;
-      if (!player.maxExp || player.maxExp <= 0) player.maxExp = 100;
+            const messageEl = document.getElementById('message');
+            const radarPopup = document.getElementById('radar-popup');
+            const displaySpeed = document.getElementById('display-speed');
+            const displayResult = document.getElementById('display-result');
+            const ball = document.getElementById('ball');
+            const batterBat = document.getElementById('batter-bat');
 
-      damageTexts.push({
-        text: `+${amount} EXP ✨`,
-        x: player.x + (Math.random() - 0.5) * 30,
-        y: player.y - 30,
-        color: "#f59e0b",
-        scale: 1.3,
-        alpha: 1, life: 0.9
-      });
+            radarPopup.style.display = 'none';
+            messageEl.innerText = "조용훈 투구 인터벌... 공이 날아갑니다!";
 
-      while (player.exp >= player.maxExp) {
-        player.exp -= player.maxExp;
-        player.age++;
-        player.maxExp = Math.round(player.maxExp * 1.28);
+            // 구종별 구속 설정 (km/h)
+            let speed = 0;
+            let startX = 180;
+            let endX = 180;
+            let startY = 320;
+            let endY = 130;
+            let trajectoryType = type;
 
-        Sound.play('levelup');
-        player.hp = calcStats().maxHp;
-
-        damageTexts.push({
-          text: `🎂 ${player.age}세 성장!`,
-          x: player.x,
-          y: player.y - 50,
-          color: "#06b6d4",
-          scale: 1.8,
-          alpha: 1, life: 1.8
-        });
-
-        checkLifeEvent(player.age);
-      }
-
-      updateHUD();
-    }
-
-    // 인생 진로 선택 모달 띄우기 (보류 지원)
-    function checkLifeEvent(age) {
-      const eventDef = LIFE_EVENTS[age];
-      if (!eventDef) return;
-
-      Sound.play('event_fanfare');
-      state.isPaused = true;
-      player.isMoving = false;
-      player.isAttacking = false;
-      state.pendingEventAge = age;
-
-      document.getElementById('life-modal-icon').innerText = eventDef.icon;
-      document.getElementById('life-modal-age').innerText = `${age}세 도달!`;
-      document.getElementById('life-modal-title').innerText = eventDef.title;
-
-      const list = document.getElementById('life-choice-list');
-      list.innerHTML = "";
-
-      eventDef.choices.forEach(ch => {
-        const canAfford = state.coins >= ch.cost;
-        const itemCard = document.createElement('div');
-        itemCard.className = `p-3 rounded-2xl border-2 flex items-center justify-between ${canAfford ? 'bg-amber-50 border-amber-300' : 'bg-slate-100 border-slate-200 opacity-60'}`;
-        
-        itemCard.innerHTML = `
-          <div class="min-w-0 pr-2">
-            <div class="font-black text-xs text-slate-800">${ch.name}</div>
-            <div class="text-[10px] text-slate-500 font-medium mt-0.5">${ch.desc}</div>
-          </div>
-          <button class="shrink-0 font-black text-xs px-3 py-2 rounded-xl shadow-md active:scale-95 transition-transform ${canAfford ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white' : 'bg-slate-300 text-slate-500 cursor-not-allowed'}" ${canAfford ? '' : 'disabled'}>
-            ${ch.cost === 0 ? '선택 (무료)' : `🪙 ${ch.cost}`}
-          </button>
-        `;
-
-        if (canAfford) {
-          itemCard.querySelector('button').addEventListener('click', () => {
-            state.coins -= ch.cost;
-            state.selectedLifePerks.push(ch);
-            state.pendingEventAge = null;
-            document.getElementById('btn-pending-decision').classList.add('hidden');
-            document.getElementById('life-choice-modal').classList.add('hidden');
-            state.isPaused = false;
-            updateHUD();
-          });
-        }
-
-        list.appendChild(itemCard);
-      });
-
-      document.getElementById('life-choice-modal').classList.remove('hidden');
-    }
-
-    // "돈 더 모으기" 버튼 클릭 시
-    document.getElementById('btn-postpone-decision').addEventListener('click', () => {
-      document.getElementById('life-choice-modal').classList.add('hidden');
-      document.getElementById('btn-pending-decision').classList.remove('hidden');
-      state.isPaused = false;
-      resetJoystick();
-    });
-
-    // 상단 "🔔 진로선택" 버튼 클릭 시 모달 다시 열기
-    document.getElementById('btn-pending-decision').addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (state.pendingEventAge) {
-        checkLifeEvent(state.pendingEventAge);
-      }
-    });
-
-    let bossWarningTimeout = null;
-    function triggerBossWarning(name) {
-      Sound.play('boss_warning');
-      const banner = document.getElementById('boss-warning-banner');
-      const text = document.getElementById('boss-warning-text');
-      text.innerText = `WARNING! ${name} 출현!`;
-      banner.classList.remove('hidden');
-
-      if (bossWarningTimeout) clearTimeout(bossWarningTimeout);
-      bossWarningTimeout = setTimeout(() => {
-        banner.classList.add('hidden');
-      }, 3500);
-    }
-
-    /* ========================================================
-       몬스터 스폰
-       ======================================================== */
-    let spawnTimer = 0;
-    const ENEMY_TYPES = [
-      { name: "세균몬", emoji: "🦠", minAge: 0, baseHp: 55, spd: 80, dmg: 10, expVal: 45, coinVal: 6, scoreVal: 50, size: 24 },
-      { name: "먼지괴물", emoji: "👾", minAge: 3, baseHp: 120, spd: 68, dmg: 16, expVal: 85, coinVal: 15, scoreVal: 90, size: 28 },
-      { name: "사탕악마", emoji: "😈", minAge: 8, baseHp: 240, spd: 92, dmg: 24, expVal: 160, coinVal: 30, scoreVal: 180, size: 32 },
-      { name: "유령 바이러스", emoji: "👻", minAge: 14, baseHp: 380, spd: 125, dmg: 32, expVal: 260, coinVal: 45, scoreVal: 260, size: 26 },
-      { name: "골렘 충치", emoji: "🗿", minAge: 17, baseHp: 950, spd: 45, dmg: 44, expVal: 480, coinVal: 80, scoreVal: 450, size: 38 },
-      { name: "박쥐 병균", emoji: "🦇", minAge: 20, baseHp: 800, spd: 140, dmg: 50, expVal: 650, coinVal: 110, scoreVal: 650, size: 30 },
-      { name: "맹독 변종균", emoji: "☣️", minAge: 22, baseHp: 1650, spd: 75, dmg: 68, expVal: 1000, coinVal: 180, scoreVal: 1050, size: 36, poison: true },
-      { name: "지옥 드래곤", emoji: "🐉", minAge: 25, baseHp: 3200, spd: 85, dmg: 95, expVal: 1900, coinVal: 320, scoreVal: 2200, size: 44, rangedDragon: true },
-      { name: "충치대마왕(보스)", emoji: "👺", minAge: 8, baseHp: 4800, spd: 60, dmg: 75, expVal: 3800, coinVal: 600, scoreVal: 5000, size: 56, boss: true }
-    ];
-
-    function spawnEnemies(dt) {
-      if (state.isPaused || state.isGameOver) return;
-
-      const aliveEnemies = enemies.filter(e => !e.dead).length;
-      if (aliveEnemies >= 24) return;
-
-      spawnTimer += dt;
-      const spawnInterval = Math.max(1.3, 2.7 - player.age * 0.04);
-
-      if (spawnTimer >= spawnInterval) {
-        spawnTimer = 0;
-        
-        const pool = ENEMY_TYPES.filter(m => player.age >= m.minAge);
-        const r = Math.random();
-        
-        let def;
-        let isBossSpawn = false;
-        if (player.age >= 8 && r < 0.06) {
-          def = ENEMY_TYPES.find(m => m.boss);
-          isBossSpawn = true;
-        } else {
-          def = pool[Math.floor(Math.random() * pool.length)];
-        }
-
-        const spawnAng = Math.random() * Math.PI * 2;
-        const spawnDist = 450 + Math.random() * 200;
-        let ex = player.x + Math.cos(spawnAng) * spawnDist;
-        let ey = player.y + Math.sin(spawnAng) * spawnDist;
-
-        ex = Math.max(80, Math.min(WORLD_WIDTH - 80, ex));
-        ey = Math.max(80, Math.min(WORLD_HEIGHT - 80, ey));
-
-        const hpScale = Math.pow(1.10, player.age) + player.age * 0.35;
-        const dmgScale = 1 + player.age * 0.20;
-        const spdScale = Math.min(1.4, 1 + player.age * 0.015);
-
-        enemies.push({
-          ...def,
-          hp: Math.round(def.baseHp * hpScale),
-          maxHp: Math.round(def.baseHp * hpScale),
-          dmg: Math.round(def.dmg * dmgScale),
-          spd: def.spd * spdScale,
-          expVal: Math.round(def.expVal * hpScale * 0.7),
-          coinVal: Math.round(def.coinVal * (1 + player.age * 0.2)),
-          x: ex, y: ey,
-          dead: false,
-          stunTimer: 0,
-          shootCooldown: 2.5
-        });
-
-        if (isBossSpawn || def.rangedDragon) {
-          triggerBossWarning(def.name);
-        }
-      }
-    }
-
-    /* ========================================================
-       게임 루프
-       ======================================================== */
-    let lastTime = 0;
-
-    function gameLoop(now) {
-      if (!lastTime) lastTime = now;
-      const dt = Math.min(0.1, (now - lastTime) / 1000);
-      lastTime = now;
-
-      if (!state.isPaused && !state.isGameOver) updateGame(dt);
-      renderGame();
-      requestAnimationFrame(gameLoop);
-    }
-
-    function updateGame(dt) {
-      const stats = calcStats();
-
-      if (cooldowns.poop > 0) cooldowns.poop = Math.max(0, cooldowns.poop - dt);
-      if (cooldowns.fart > 0) cooldowns.fart = Math.max(0, cooldowns.fart - dt);
-      if (cooldowns.cry > 0) cooldowns.cry = Math.max(0, cooldowns.cry - dt);
-      if (player.attackTimer > 0) player.attackTimer = Math.max(0, player.attackTimer - dt);
-
-      updateCoolText('cool-poop', cooldowns.poop);
-      updateCoolText('cool-fart', cooldowns.fart);
-      updateCoolText('cool-cry', cooldowns.cry);
-
-      if (player.isAttacking) tryShoot();
-      if (stats.hpRegen > 0) player.hp = Math.min(stats.maxHp, player.hp + (stats.hpRegen * dt));
-
-      let moveX = joyVector.x;
-      let moveY = joyVector.y;
-      if (keys['w'] || keys['arrowup']) moveY -= 1;
-      if (keys['s'] || keys['arrowdown']) moveY += 1;
-      if (keys['a'] || keys['arrowleft']) moveX -= 1;
-      if (keys['d'] || keys['arrowright']) moveX += 1;
-
-      const moveLen = Math.hypot(moveX, moveY);
-      if (moveLen > 0.1) {
-        player.isMoving = true;
-        const finalSpeed = (player.baseSpeed + stats.speedBonus);
-        player.x += (moveX / (moveLen > 1 ? moveLen : 1)) * finalSpeed * dt;
-        player.y += (moveY / (moveLen > 1 ? moveLen : 1)) * finalSpeed * dt;
-        player.walkCycle += 10 * dt;
-        player.dirX = moveX / moveLen;
-        player.dirY = moveY / moveLen;
-
-        player.x = Math.max(35, Math.min(WORLD_WIDTH - 35, player.x));
-        player.y = Math.max(35, Math.min(WORLD_HEIGHT - 35, player.y));
-      } else {
-        player.isMoving = false;
-      }
-
-      const targetCamX = player.x - width / 2;
-      const targetCamY = player.y - height / 2;
-      camera.x = isNaN(targetCamX) ? (WORLD_WIDTH - width) / 2 : targetCamX;
-      camera.y = isNaN(targetCamY) ? (WORLD_HEIGHT - height) / 2 : targetCamY;
-
-      for (let i = worldCoins.length - 1; i >= 0; i--) {
-        const c = worldCoins[i];
-        const cdx = player.x - c.x;
-        const cdy = player.y - c.y;
-        const cdist = Math.hypot(cdx, cdy);
-
-        if (cdist < 22) {
-          state.coins += c.val;
-          Sound.play('coin');
-          updateHUD();
-          worldCoins.splice(i, 1);
-        } else {
-          c.x += (cdx / cdist) * c.spd * dt;
-          c.y += (cdy / cdist) * c.spd * dt;
-          c.spd += 250 * dt;
-        }
-      }
-
-      for (let i = projectiles.length - 1; i >= 0; i--) {
-        const p = projectiles[i];
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.life -= dt;
-
-        for (let j = 0; j < enemies.length; j++) {
-          const en = enemies[j];
-          if (en.dead) continue;
-          if (Math.hypot(en.x - p.x, en.y - p.y) < en.size + p.radius) {
-            applyDamage(en, p.damage, false, null);
-            if (p.pierce <= 0) { p.life = 0; break; } else { p.pierce--; }
-          }
-        }
-
-        if (p.life <= 0 || p.x < 0 || p.x > WORLD_WIDTH || p.y < 0 || p.y > WORLD_HEIGHT) {
-          projectiles.splice(i, 1);
-        }
-      }
-
-      for (let i = bossProjectiles.length - 1; i >= 0; i--) {
-        const bp = bossProjectiles[i];
-        bp.x += bp.vx * dt;
-        bp.y += bp.vy * dt;
-        bp.life -= dt;
-
-        if (Math.hypot(player.x - bp.x, player.y - bp.y) < bp.radius + 14) {
-          let incomingDmg = bp.damage * (1 - stats.dmgReduction) - stats.def;
-          incomingDmg = Math.max(6, incomingDmg);
-          player.hp -= incomingDmg;
-          damageTexts.push({ text: `-${Math.round(incomingDmg)}`, x: player.x, y: player.y - 20, color: "#ef4444", scale: 1.2, alpha: 1, life: 0.8 });
-          Sound.play('hit');
-          bp.life = 0;
-          if (player.hp <= 0) gameOver();
-        }
-
-        if (bp.life <= 0 || bp.x < 0 || bp.x > WORLD_WIDTH || bp.y < 0 || bp.y > WORLD_HEIGHT) {
-          bossProjectiles.splice(i, 1);
-        }
-      }
-
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        const en = enemies[i];
-        if (en.dead) { enemies.splice(i, 1); continue; }
-        if (en.stunTimer > 0) { en.stunTimer -= dt; continue; }
-
-        const dx = player.x - en.x;
-        const dy = player.y - en.y;
-        const d = Math.hypot(dx, dy);
-
-        if (d > 0) {
-          en.x += (dx / d) * en.spd * dt;
-          en.y += (dy / d) * en.spd * dt;
-        }
-
-        if (en.boss) {
-          en.shootCooldown -= dt;
-          if (en.shootCooldown <= 0) {
-            en.shootCooldown = Math.max(2.0, 2.8 - player.age * 0.02);
-            Sound.play('boss_shoot');
-            for (let k = 0; k < 8; k++) {
-              const ang = (Math.PI * 2 / 8) * k;
-              bossProjectiles.push({
-                x: en.x, y: en.y,
-                vx: Math.cos(ang) * 210,
-                vy: Math.sin(ang) * 210,
-                damage: en.dmg * 0.75,
-                radius: 11,
-                life: 3.2
-              });
+            if (type === 'fastball') {
+                speed = (158 + Math.random() * 4).toFixed(1); // 158 ~ 162
+                endX += (currentFocus === 'corner' ? (Math.random() > 0.5 ? 45 : -45) : (Math.random() * 20 - 10));
+                endY += (currentFocus === 'corner' ? (Math.random() > 0.5 ? 45 : -45) : (Math.random() * 20 - 10));
+            } else if (type === 'slider') {
+                speed = (142 + Math.random() * 3).toFixed(1); // 142 ~ 145
+                endX += 55; // 우타자 바깥쪽 휘어짐
+                endY += 20;
+            } else if (type === 'curve') {
+                speed = (138 + Math.random() * 2).toFixed(1); // 138 ~ 140
+                endX += (Math.random() * 40 - 20);
+                endY += 60; // 폭포수 떨어짐
+            } else if (type === 'forkball') {
+                speed = (130 + Math.random() * 12).toFixed(1); // 130 ~ 142
+                endX += (Math.random() * 30 - 15);
+                endY += 75; // 급격한 낙하
             }
-          }
+
+            // 공 초기 위치 설정
+            ball.style.display = 'block';
+            ball.style.left = startX + 'px';
+            ball.style.top = startY + 'px';
+            ball.style.transform = 'scale(0.3)';
+
+            // 투구 궤적 애니메이션
+            let startTime = null;
+            const duration = 350;
+
+            function animatePitch(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let progress = (timestamp - startTime) / duration;
+                if (progress > 1) progress = 1;
+
+                let curX = startX + (endX - startX) * progress;
+                let curY = startY + (endY - startY) * progress;
+                let curScale = 0.3 + 0.9 * progress;
+
+                if (trajectoryType === 'slider') {
+                    curX += Math.sin(progress * Math.PI) * 35;
+                } else if (trajectoryType === 'curve') {
+                    curY -= Math.sin(progress * Math.PI) * 25;
+                }
+
+                ball.style.left = curX + 'px';
+                ball.style.top = curY + 'px';
+                ball.style.transform = `scale(${curScale})`;
+
+                if (progress < 1) {
+                    requestAnimationFrame(animatePitch);
+                } else {
+                    resolveAtBat(endX, endY, speed, type);
+                }
+            }
+
+            requestAnimationFrame(animatePitch);
         }
 
-        if (en.rangedDragon) {
-          en.shootCooldown -= dt;
-          if (en.shootCooldown <= 0) {
-            en.shootCooldown = 2.4;
-            Sound.play('boss_shoot');
-            const fang = Math.atan2(player.y - en.y, player.x - en.x);
-            bossProjectiles.push({
-              x: en.x, y: en.y,
-              vx: Math.cos(fang) * 230,
-              vy: Math.sin(fang) * 230,
-              damage: en.dmg * 0.8,
-              radius: 12,
-              life: 2.5
-            });
-          }
+        function resolveAtBat(ex, ey, speed, type) {
+            const radarPopup = document.getElementById('radar-popup');
+            const displaySpeed = document.getElementById('display-speed');
+            const displayResult = document.getElementById('display-result');
+            const ball = document.getElementById('ball');
+            const batterBat = document.getElementById('batter-bat');
+
+            let isStrike = (ex >= 135 && ex <= 225 && ey >= 95 && ey <= 185);
+            let resultText = "";
+
+            let hitChance = Math.random();
+            if (hitChance < 0.35) {
+                isStrike = true;
+                resultText = "타자 헛스윙! 스트라이크!";
+                strikes++;
+                batterBat.style.transform = "rotate(-65deg)";
+                setTimeout(() => batterBat.style.transform = "rotate(-15deg)", 200);
+            } else if (hitChance < 0.55 && isStrike) {
+                resultText = Math.random() > 0.5 ? "배트에 맞았으나 빗나간 파울!" : "가볍게 맞춘 타구... 내야 땅볼 아웃!";
+                if (resultText.includes("땅볼")) {
+                    outs++;
+                }
+            } else {
+                if (isStrike) {
+                    resultText = "루킹 스트라이크!";
+                    strikes++;
+                } else {
+                    resultText = "볼! 골짜기로 빠졌습니다.";
+                    balls++;
+                }
+            }
+
+            // 구속은 투구가 끝난 뒤 대형 전광판에 강조되어 뜸
+            displaySpeed.innerText = speed + " km/h";
+            displayResult.innerText = resultText;
+            radarPopup.style.display = 'block';
+            document.getElementById('message').innerText = `[구속 ${speed}km/h] ${resultText}`;
+
+            setTimeout(() => {
+                if (strikes >= 3) {
+                    alert("삼진 아웃! 이화용 타자 물러납니다.");
+                    resetCount();
+                    outs++;
+                } else if (balls >= 4) {
+                    alert("볼넷 허용!");
+                    resetCount();
+                }
+
+                if (outs >= 3) {
+                    alert("이닝 종료! 조용훈 투수의 완벽투!");
+                    outs = 0;
+                    resetCount();
+                }
+
+                updateScoreboard();
+                ball.style.display = 'none';
+                isPitching = false;
+            }, 1200);
         }
 
-        if (d < en.size + 18) {
-          let incomingDmg = en.dmg * (1 - stats.dmgReduction) - stats.def;
-          incomingDmg = Math.max(4, incomingDmg);
-          player.hp -= incomingDmg * dt * 2.4;
-
-          if (player.hp <= 0) gameOver();
+        function resetCount() {
+            strikes = 0;
+            balls = 0;
         }
-      }
 
-      for (let i = damageTexts.length - 1; i >= 0; i--) {
-        const dtItem = damageTexts[i];
-        dtItem.y -= 40 * dt;
-        dtItem.alpha -= 1.4 * dt;
-        dtItem.life -= dt;
-        if (dtItem.life <= 0 || dtItem.alpha <= 0) damageTexts.splice(i, 1);
-      }
-
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const pt = particles[i];
-        if (pt.type === 'poop-debris' || pt.type === 'fart-gas') {
-          pt.x += (pt.vx || 0) * dt;
-          pt.y += (pt.vy || 0) * dt;
-          pt.life -= dt;
-          pt.alpha -= 1.2 * dt;
-          if (pt.life <= 0 || pt.alpha <= 0) particles.splice(i, 1);
-        } else {
-          pt.radius += (pt.maxRadius - pt.radius) * 10 * dt;
-          pt.alpha -= 2.0 * dt;
-          if (pt.alpha <= 0) particles.splice(i, 1);
+        function updateScoreboard() {
+            document.getElementById('count-s').innerText = strikes;
+            document.getElementById('count-b').innerText = balls;
+            document.getElementById('count-o').innerText = outs;
+            document.getElementById('score-away').innerText = awayScore;
         }
-      }
-
-      spawnEnemies(dt);
-      updateHUD();
-    }
-
-    function updateCoolText(elementId, seconds) {
-      const el = document.getElementById(elementId);
-      if (seconds > 0) {
-        el.classList.remove('hidden');
-        el.innerText = seconds.toFixed(1) + 's';
-      } else {
-        el.classList.add('hidden');
-      }
-    }
-
-    /* ========================================================
-       오픈월드 렌더링
-       ======================================================== */
-    function renderGame() {
-      ctx.clearRect(0, 0, width, height);
-
-      ctx.save();
-      const camX = isNaN(camera.x) ? 0 : camera.x;
-      const camY = isNaN(camera.y) ? 0 : camera.y;
-      ctx.translate(-camX, -camY);
-
-      ctx.fillStyle = "#fef08a";
-      const startX = Math.max(0, Math.floor(camX / 40) * 40);
-      const endX = Math.min(WORLD_WIDTH, startX + width + 80);
-      const startY = Math.max(0, Math.floor(camY / 40) * 40);
-      const endY = Math.min(WORLD_HEIGHT, startY + height + 80);
-
-      for (let x = startX; x <= endX; x += 40) {
-        for (let y = startY; y <= endY; y += 40) {
-          ctx.beginPath();
-          ctx.arc(x, y, 2.0, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      ctx.strokeStyle = "rgba(239, 68, 68, 0.85)";
-      ctx.lineWidth = 14;
-      ctx.strokeRect(7, 7, WORLD_WIDTH - 14, WORLD_HEIGHT - 14);
-
-      ctx.strokeStyle = "#e2e8f0";
-      ctx.lineWidth = 4;
-      ctx.strokeRect(18, 18, WORLD_WIDTH - 36, WORLD_HEIGHT - 36);
-
-      const stats = calcStats();
-      const current = getCurrentStage();
-
-      particles.forEach(pt => {
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, pt.alpha);
-
-        if (pt.type === 'poop-blast') {
-          if (pt.tier === 3) {
-            ctx.fillStyle = "rgba(234, 179, 8, 0.65)";
-            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.fill();
-            ctx.font = `${Math.min(42, pt.radius * 0.45)}px sans-serif`;
-            ctx.fillText("🎵", pt.x - 25, pt.y - 20);
-            ctx.fillText("💩", pt.x + 15, pt.y + 20);
-          } else if (pt.tier === 2) {
-            ctx.fillStyle = "rgba(161, 98, 7, 0.6)";
-            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.fill();
-          } else {
-            ctx.fillStyle = "rgba(180, 83, 9, 0.55)";
-            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.fill();
-          }
-        } else if (pt.type === 'poop-debris') {
-          ctx.fillStyle = "#78350f";
-          ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2); ctx.fill();
-        } else if (pt.type === 'fart-gas') {
-          ctx.fillStyle = "rgba(16, 185, 129, 0.45)";
-          ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.fill();
-        } else if (pt.type === 'fart-cloud') {
-          if (pt.tier === 3) {
-            ctx.strokeStyle = "rgba(16, 185, 129, 0.95)";
-            ctx.lineWidth = 10;
-            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.stroke();
-            ctx.fillStyle = "rgba(52, 211, 153, 0.5)";
-            ctx.fill();
-          } else if (pt.tier === 2) {
-            ctx.fillStyle = "rgba(5, 150, 105, 0.6)";
-            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.fill();
-          } else {
-            ctx.fillStyle = "rgba(52, 211, 153, 0.55)";
-            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.fill();
-          }
-        } else if (pt.type === 'cry-wave') {
-          if (pt.tier === 3) {
-            ctx.strokeStyle = "rgba(14, 165, 233, 0.95)";
-            ctx.lineWidth = 12;
-            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.stroke();
-            ctx.fillStyle = "rgba(56, 189, 248, 0.3)";
-            ctx.fill();
-          } else if (pt.tier === 2) {
-            ctx.strokeStyle = "rgba(59, 130, 246, 0.85)";
-            ctx.lineWidth = 8;
-            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.stroke();
-          } else {
-            ctx.strokeStyle = "rgba(56, 189, 248, 0.8)";
-            ctx.lineWidth = 6;
-            ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2); ctx.stroke();
-          }
-        }
-        ctx.restore();
-      });
-
-      bossProjectiles.forEach(bp => {
-        ctx.save();
-        ctx.fillStyle = "#dc2626";
-        ctx.beginPath(); ctx.arc(bp.x, bp.y, bp.radius, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#fca5a5";
-        ctx.beginPath(); ctx.arc(bp.x, bp.y, bp.radius * 0.5, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-      });
-
-      worldCoins.forEach(c => {
-        ctx.save();
-        ctx.font = "16px sans-serif";
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText("🪙", c.x, c.y);
-        ctx.restore();
-      });
-
-      projectiles.forEach(p => {
-        ctx.save();
-        ctx.font = `${p.radius * 2}px sans-serif`;
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(p.type, p.x, p.y);
-        ctx.restore();
-      });
-
-      enemies.forEach(en => {
-        ctx.save();
-        if (en.hp < en.maxHp) {
-          const barW = en.size * 1.5;
-          ctx.fillStyle = "rgba(0,0,0,0.4)";
-          ctx.fillRect(en.x - barW / 2, en.y - en.size - 10, barW, 5);
-          ctx.fillStyle = en.boss ? "#f43f5e" : "#ef4444";
-          ctx.fillRect(en.x - barW / 2, en.y - en.size - 10, barW * (en.hp / en.maxHp), 5);
-        }
-        if (en.boss) {
-          ctx.beginPath();
-          ctx.arc(en.x, en.y, en.size + 14, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(220, 38, 38, 0.28)";
-          ctx.fill();
-        }
-        ctx.font = `${en.size * 1.5}px sans-serif`;
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(en.emoji, en.x, en.y);
-        ctx.restore();
-      });
-
-      ctx.save();
-      ctx.translate(player.x, player.y);
-
-      const walkBob = Math.sin(player.walkCycle) * 3;
-      const scale = 1 + Math.min(1.0, player.age * 0.03);
-      ctx.scale(scale, scale);
-
-      ctx.fillStyle = stats.clothColor;
-      ctx.beginPath(); ctx.arc(0, 2 + walkBob, 15, 0, Math.PI * 2); ctx.fill();
-
-      ctx.fillStyle = "#ffedd5";
-      ctx.beginPath(); ctx.arc(0, -10 + walkBob, 13, 0, Math.PI * 2); ctx.fill();
-
-      ctx.fillStyle = "#0f172a";
-      ctx.beginPath();
-      ctx.arc(-4, -11 + walkBob, 2, 0, Math.PI * 2);
-      ctx.arc(4, -11 + walkBob, 2, 0, Math.PI * 2);
-      ctx.fill();
-
-      if (player.age < 8) {
-        ctx.fillStyle = "#fdba74";
-        ctx.beginPath(); ctx.arc(0, -16 + walkBob, 14, Math.PI, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#38bdf8";
-        ctx.beginPath(); ctx.arc(0, -6 + walkBob, 3.5, 0, Math.PI * 2); ctx.fill();
-      } else if (player.age < 14) {
-        ctx.fillStyle = "#3b82f6";
-        ctx.fillRect(-12, -22 + walkBob, 24, 7);
-        ctx.beginPath(); ctx.arc(0, -19 + walkBob, 12, Math.PI, Math.PI * 2); ctx.fill();
-      } else if (player.age < 21) {
-        ctx.fillStyle = "#78350f";
-        ctx.beginPath(); ctx.arc(0, -18 + walkBob, 14, Math.PI * 0.9, Math.PI * 2.1); ctx.fill();
-      } else if (player.age === 21) {
-        ctx.fillStyle = "#1e3a1e";
-        ctx.beginPath(); ctx.arc(0, -20 + walkBob, 13, Math.PI, Math.PI * 2); ctx.fill();
-      } else {
-        ctx.fillStyle = "#3b82f6";
-        ctx.beginPath();
-        ctx.moveTo(0, 3 + walkBob);
-        ctx.lineTo(-4, 15 + walkBob);
-        ctx.lineTo(0, 20 + walkBob);
-        ctx.lineTo(4, 15 + walkBob);
-        ctx.closePath();
-        ctx.fill();
-      }
-      ctx.restore();
-
-      ctx.save();
-      ctx.fillStyle = "rgba(0,0,0,0.65)";
-      ctx.font = "bold 11px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(`유준이 (${current.name} ${player.age}세)`, player.x, player.y - 36);
-      ctx.restore();
-
-      damageTexts.forEach(dtItem => {
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, dtItem.alpha);
-        ctx.font = `bold ${Math.round(14 * dtItem.scale)}px sans-serif`;
-        ctx.fillStyle = dtItem.color;
-        ctx.textAlign = "center";
-        ctx.fillText(dtItem.text, dtItem.x, dtItem.y);
-        ctx.restore();
-      });
-
-      ctx.restore();
-    }
-
-    /* ========================================================
-       HUD 업데이트 (게이지 바 텍스트 겹침 완벽 반영)
-       ======================================================== */
-    function updateHUD() {
-      const stats = calcStats();
-      const current = getCurrentStage();
-      const { fart, poop, cry } = getSkillEvolutions();
-
-      document.getElementById('hud-avatar').innerText = current.icon;
-      document.getElementById('grow-stage-badge').innerText = current.name;
-      document.getElementById('level-badge').innerText = `${player.age}세`;
-
-      const currentHp = Math.max(0, isNaN(player.hp) ? stats.maxHp : player.hp);
-      const hpPct = Math.max(0, Math.min(100, (currentHp / stats.maxHp) * 100));
-      document.getElementById('hp-bar').style.width = `${hpPct}%`;
-      document.getElementById('hp-text').innerText = `${Math.ceil(currentHp)} / ${stats.maxHp}`;
-
-      const currentExp = player.exp || 0;
-      const targetExp = player.maxExp || 100;
-      const expPct = Math.max(0, Math.min(100, (currentExp / targetExp) * 100));
-      
-      const expBar = document.getElementById('exp-bar');
-      if (expBar) expBar.style.width = `${expPct}%`;
-      document.getElementById('exp-text').innerText = `EXP ${Math.floor(expPct)}%`;
-
-      document.getElementById('coin-count').innerText = state.coins;
-      document.getElementById('modal-coin').innerText = state.coins;
-
-      document.getElementById('atk-btn-icon').innerText = current.atkIcon;
-      document.getElementById('atk-btn-text').innerText = current.atkName;
-
-      const baseAtk = Math.round(stats.atk * (1 + stats.dmgAmp));
-      document.getElementById('dmg-atk-btn').innerText = `ATK ${baseAtk}`;
-
-      document.getElementById('name-skill-poop').innerText = poop.name;
-      document.getElementById('icon-skill-poop').innerText = poop.icon;
-      document.getElementById('dmg-skill-poop').innerText = `ATK ${Math.round(baseAtk * poop.pwr)}`;
-
-      document.getElementById('name-skill-fart').innerText = fart.name;
-      document.getElementById('icon-skill-fart').innerText = fart.icon;
-      document.getElementById('dmg-skill-fart').innerText = `ATK ${Math.round(baseAtk * fart.pwr)}`;
-
-      document.getElementById('name-skill-cry').innerText = cry.name;
-      document.getElementById('icon-skill-cry').innerText = cry.icon;
-      document.getElementById('dmg-skill-cry').innerText = `ATK ${Math.round(baseAtk * cry.pwr)}`;
-
-      const skillBar = document.getElementById('passive-skills-bar');
-      skillBar.innerHTML = "";
-      state.selectedLifePerks.forEach(p => {
-        skillBar.innerHTML += `<span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300">${p.name}</span>`;
-      });
-
-      renderEquipSidebar();
-    }
-
-    function renderEquipSidebar() {
-      const container = document.getElementById('equip-slot-container');
-      const countEl = document.getElementById('equip-count');
-      const equippedIds = Object.keys(state.itemLevels).filter(id => state.itemLevels[id] > 0);
-      countEl.innerText = `${equippedIds.length}/10`;
-
-      if (equippedIds.length === 0) {
-        container.innerHTML = `<div class="text-[9px] text-slate-300 text-center py-2">상점에서 아이템을 무한 강화하세요!</div>`;
-        return;
-      }
-
-      container.innerHTML = "";
-      equippedIds.forEach(id => {
-        const itemDef = ITEMS_DATA.find(i => i.id === id);
-        if (!itemDef) return;
-        const curLv = state.itemLevels[id];
-
-        const row = document.createElement('div');
-        row.className = "flex items-center justify-between bg-slate-800/80 px-2 py-1.5 rounded-lg border border-slate-600/70 active:bg-slate-700 cursor-pointer";
-        row.innerHTML = `
-          <div class="flex items-center gap-1 min-w-0 pr-1">
-            <span class="text-xs shrink-0">${itemDef.icon}</span>
-            <span class="font-bold text-[10px] text-white truncate max-w-[80px]">${itemDef.name}</span>
-          </div>
-          <span class="text-[9px] bg-amber-400 text-amber-950 font-black px-1 rounded shrink-0">Lv.${curLv}</span>
-        `;
-        row.addEventListener('click', (e) => showItemTooltip(e, itemDef, curLv));
-        container.appendChild(row);
-      });
-    }
-
-    function showItemTooltip(e, itemDef, curLv) {
-      const tt = document.getElementById('item-tooltip');
-      document.getElementById('tt-title').innerHTML = `${itemDef.icon} ${itemDef.name} <span class="text-amber-400 text-[10px]">(현재 Lv.${curLv})</span>`;
-      document.getElementById('tt-stat').innerText = `✨ ${itemDef.desc}`;
-      document.getElementById('tt-type').innerText = `속성: ${itemDef.attr}`;
-
-      tt.style.top = `${Math.min(window.innerHeight - 100, Math.max(80, e.clientY - 20))}px`;
-      tt.style.left = `150px`;
-      tt.classList.remove('hidden');
-
-      setTimeout(() => { tt.classList.add('hidden'); }, 2500);
-    }
-
-    document.getElementById('btn-toggle-equip').addEventListener('click', () => {
-      state.equipDrawerOpen = !state.equipDrawerOpen;
-      const sidebar = document.getElementById('equip-sidebar');
-      const btn = document.getElementById('btn-toggle-equip');
-      if (state.equipDrawerOpen) {
-        sidebar.classList.remove('collapsed');
-        btn.innerHTML = "&lt;";
-      } else {
-        sidebar.classList.add('collapsed');
-        btn.innerHTML = "&gt;";
-      }
-    });
-
-    function buildShopUI() {
-      const list = document.getElementById('shop-item-list');
-      list.innerHTML = "";
-
-      ITEMS_DATA.forEach(item => {
-        const curLv = state.itemLevels[item.id] || 0;
-        const nextCost = getItemCost(item, curLv);
-
-        const card = document.createElement('div');
-        card.className = "bg-amber-50/80 border border-amber-200 rounded-2xl p-3 flex items-center justify-between";
-
-        card.innerHTML = `
-          <div class="flex items-center gap-2.5 min-w-0 pr-2">
-            <div class="text-3xl p-2 bg-white rounded-2xl shadow-sm border border-amber-200 shrink-0">${item.icon}</div>
-            <div class="min-w-0">
-              <div class="flex items-center gap-1.5">
-                <span class="font-extrabold text-xs text-slate-800">${item.name}</span>
-                <span class="text-[9px] bg-amber-500 text-white font-black px-1.5 py-0.5 rounded-full">Lv.${curLv}</span>
-              </div>
-              <div class="text-[10px] text-amber-700 font-medium">${item.attr}</div>
-              <div class="text-[10px] text-slate-500 truncate font-semibold mt-0.5">${item.desc}</div>
-            </div>
-          </div>
-          <button class="btn-buy-tier shrink-0 font-black text-xs px-3.5 py-2 rounded-xl shadow-md transition-transform active:scale-95 ${state.coins >= nextCost ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
-            강화 🪙 ${nextCost.toLocaleString()}
-          </button>
-        `;
-
-        const buyBtn = card.querySelector('.btn-buy-tier');
-        buyBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (state.coins >= nextCost) {
-            state.coins -= nextCost;
-            state.itemLevels[item.id] = curLv + 1;
-            Sound.play('coin');
-            buildShopUI();
-            updateHUD();
-          }
-        });
-
-        list.appendChild(card);
-      });
-    }
-
-    document.getElementById('btn-shop').addEventListener('click', (e) => {
-      e.stopPropagation();
-      state.isPaused = true;
-      player.isMoving = false;
-      player.isAttacking = false;
-      buildShopUI();
-      document.getElementById('shop-modal').classList.remove('hidden');
-    });
-
-    document.getElementById('btn-close-shop').addEventListener('click', (e) => {
-      e.stopPropagation();
-      document.getElementById('shop-modal').classList.add('hidden');
-      state.isPaused = false;
-      resetJoystick();
-    });
-
-    document.getElementById('btn-rankings').addEventListener('click', (e) => {
-      e.stopPropagation();
-      state.isPaused = true;
-      player.isMoving = false;
-      player.isAttacking = false;
-      showRankings();
-      document.getElementById('rank-modal').classList.remove('hidden');
-    });
-
-    document.getElementById('btn-close-rank').addEventListener('click', (e) => {
-      e.stopPropagation();
-      document.getElementById('rank-modal').classList.add('hidden');
-      state.isPaused = false;
-      resetJoystick();
-    });
-
-    /* ========================================================
-       실시간 점수 연동 & 4위/5위 줄바꿈 수정
-       ======================================================== */
-    function getLocalRankings() {
-      const data = localStorage.getItem('yujun_clean_rankings');
-      return data ? JSON.parse(data) : [];
-    }
-
-    function saveLocalRankings(list) {
-      localStorage.setItem('yujun_clean_rankings', JSON.stringify(list));
-    }
-
-    function parseSharedScoreFromURL() {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const sharedScore = parseInt(params.get('score'));
-        const sharedName = params.get('name');
-        const sharedStage = params.get('stage') || '신생아';
-        const sharedAge = parseInt(params.get('age')) || parseInt(params.get('lv')) || 0;
-
-        if (!isNaN(sharedScore) && sharedScore > 0 && sharedName) {
-          const list = getLocalRankings();
-          const exists = list.some(r => r.name === sharedName && r.score === sharedScore);
-          if (!exists) {
-            const now = new Date();
-            const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
-            list.push({
-              name: sharedName,
-              score: sharedScore,
-              age: sharedAge,
-              stage: sharedStage,
-              date: dateStr
-            });
-            list.sort((a, b) => b.score - a.score);
-            saveLocalRankings(list.slice(0, 15));
-          }
-        }
-      } catch (e) {}
-    }
-
-    function recordCurrentScore(newScore, finalAge, finalStage) {
-      const list = getLocalRankings();
-      const now = new Date();
-      const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
-
-      list.push({
-        name: state.playerName,
-        score: newScore,
-        age: finalAge,
-        stage: finalStage,
-        date: dateStr
-      });
-
-      list.sort((a, b) => b.score - a.score);
-      saveLocalRankings(list.slice(0, 15));
-    }
-
-    function renderStartRankPreview() {
-      const preview = document.getElementById('start-rank-preview');
-      const rankings = getLocalRankings();
-
-      if (rankings.length === 0) {
-        preview.innerHTML = `
-          <div class="text-center py-4 text-[10px] text-slate-400">
-            아직 등록된 랭킹 기록이 없습니다.<br>첫 번째 1등 주인공이 되어보세요!
-          </div>
-        `;
-        return;
-      }
-
-      preview.innerHTML = "";
-      rankings.slice(0, 5).forEach((r, idx) => {
-        const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `${idx + 1}위`));
-        const item = document.createElement('div');
-        item.className = "flex items-center justify-between bg-amber-50 px-2 py-1.5 rounded-xl border border-amber-200/80 text-[10px]";
-        item.innerHTML = `
-          <div class="flex items-center gap-1.5 min-w-0 pr-1">
-            <span class="font-black text-xs shrink-0 w-7 text-center whitespace-nowrap">${medal}</span>
-            <span class="font-bold text-slate-700 truncate max-w-[80px]">${r.name}</span>
-            <span class="text-[9px] text-amber-700 font-semibold shrink-0">${r.stage} (${r.age !== undefined ? r.age : r.level}세)</span>
-          </div>
-          <span class="font-black text-amber-600 shrink-0 whitespace-nowrap">${r.score.toLocaleString()} P</span>
-        `;
-        preview.appendChild(item);
-      });
-    }
-
-    function showRankings() {
-      const listContainer = document.getElementById('rank-list');
-      const rankings = getLocalRankings();
-
-      if (rankings.length === 0) {
-        listContainer.innerHTML = `
-          <div class="text-center py-10">
-            <div class="text-4xl mb-2">🏆</div>
-            <div class="text-xs font-bold text-slate-700">등록된 랭킹 기록이 없습니다.</div>
-            <div class="text-[10px] text-slate-400 mt-1">게임을 플레이하고 첫 번째 명예의 전당 주인공이 되어보세요!</div>
-          </div>
-        `;
-        return;
-      }
-
-      listContainer.innerHTML = "";
-      rankings.forEach((r, idx) => {
-        const medal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `${idx + 1}위`));
-        const row = document.createElement('div');
-        row.className = "flex items-center justify-between bg-amber-50/80 p-2.5 rounded-2xl border border-amber-200 text-xs";
-        row.innerHTML = `
-          <div class="flex items-center gap-2">
-            <span class="font-black text-sm w-7 text-center shrink-0 whitespace-nowrap">${medal}</span>
-            <div>
-              <div class="font-black text-slate-800">${r.name}</div>
-              <div class="text-[9px] text-slate-400 font-semibold">${r.stage} (${r.age !== undefined ? r.age : r.level}세) · ${r.date}</div>
-            </div>
-          </div>
-          <span class="font-black text-amber-600 text-sm whitespace-nowrap">${r.score.toLocaleString()} P</span>
-        `;
-        listContainer.appendChild(row);
-      });
-    }
-
-    /* ========================================================
-       게임 오버
-       ======================================================== */
-    function gameOver() {
-      state.isGameOver = true;
-      state.isPaused = true;
-
-      const finalAge = player.age;
-      const currentStage = getCurrentStage();
-      const finalStageName = currentStage.name;
-      const finalScore = state.score;
-
-      recordCurrentScore(finalScore, finalAge, finalStageName);
-
-      document.getElementById('over-stage-text').innerText = `${state.playerName} 님의 유준이는 [${finalStageName} ${finalAge}세]까지 성장했습니다!`;
-      document.getElementById('final-score').innerText = `${finalScore.toLocaleString()} P`;
-      document.getElementById('final-stats').innerText = `처치한 악당: ${state.kills}마리 | 모은 코인: ${state.coins}개`;
-
-      window.lastShareUrl = `https://xxhubzz.github.io/yujun/?score=${finalScore}&name=${encodeURIComponent(state.playerName)}&stage=${encodeURIComponent(finalStageName)}&age=${finalAge}`;
-
-      localStorage.setItem('yujun_remembered_name', state.playerName);
-
-      player.age = 0;
-      player.exp = 0;
-      player.maxExp = 100;
-      player.x = WORLD_WIDTH / 2;
-      player.y = WORLD_HEIGHT / 2;
-      state.coins = 0;
-      state.itemLevels = {};
-      state.selectedLifePerks = [];
-      state.pendingEventAge = null;
-
-      document.getElementById('gameover-modal').classList.remove('hidden');
-    }
-
-    document.getElementById('btn-kakao-share').addEventListener('click', async () => {
-      const shareUrl = window.lastShareUrl || "https://xxhubzz.github.io/yujun/";
-      const shareText = `[유준이 키우기]\n${state.playerName} 님이 유준이를 키워 최종 점수 ${state.score.toLocaleString()}P를 달성했습니다!\n지금 링크를 눌러 1위 기록에 도전해보세요!\n${shareUrl}`;
-
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: '유준이 키우기', text: shareText });
-        } catch(e) {}
-      } else {
-        const tempInput = document.createElement('textarea');
-        tempInput.value = shareText;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-        alert("게임 결과와 웹 링크가 복사되었습니다!\n카카오톡 채팅방에 [붙여넣기] 해주세요!");
-      }
-    });
-
-    document.getElementById('btn-restart').addEventListener('click', () => {
-      location.reload();
-    });
-
-    document.getElementById('btn-start-game').addEventListener('click', () => {
-      const nameInput = document.getElementById('player-nickname-input').value.trim();
-      state.playerName = nameInput.length > 0 ? nameInput : "익명의 수호자";
-      localStorage.setItem('yujun_remembered_name', state.playerName);
-      document.getElementById('player-name-display').innerText = state.playerName;
-
-      Sound.init();
-      document.getElementById('start-modal').classList.add('hidden');
-      state.isPaused = false;
-      updateHUD();
-      resize();
-    });
-
-    function initNickname() {
-      const savedName = localStorage.getItem('yujun_remembered_name');
-      if (savedName) {
-        document.getElementById('player-nickname-input').value = savedName;
-      }
-    }
-
-    initNickname();
-    parseSharedScoreFromURL();
-    renderStartRankPreview();
-    updateHUD();
-    resize();
-    requestAnimationFrame(gameLoop);
-  </script>
+    </script>
 </body>
 </html>
