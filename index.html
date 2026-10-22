@@ -341,16 +341,16 @@
         <!-- 스코어보드 -->
         <div class="scoreboard">
             <div class="team-score">
-                <span class="team-name" id="score-label-1">조용훈 투수</span>
-                <span class="score-num" style="color:#ef4444;" id="score-home">0</span>
+                <span class="team-name" id="score-label-left">조용훈 투수</span>
+                <span class="score-num" style="color:#ef4444;" id="score-left">0</span>
             </div>
             <div class="count-status">
                 <div style="color:#94a3b8; font-weight:bold;" id="inning-title">조용훈 투수 등판</div>
                 <div>S <span class="count-dots" id="count-s">0</span> | B <span class="count-dots" id="count-b">0</span> | O <span class="count-dots" id="count-o">0</span></div>
             </div>
             <div class="team-score">
-                <span class="team-name" id="score-label-2">이화용 타자</span>
-                <span class="score-num" style="color:#38bdf8;" id="score-away">0</span>
+                <span class="team-name" id="score-label-right">이화용 타자</span>
+                <span class="score-num" style="color:#38bdf8;" id="score-right">0</span>
             </div>
         </div>
 
@@ -423,7 +423,8 @@
         let strikes = 0;
         let balls = 0;
         let outs = 0;
-        let homeScore = 0; // 조용훈 점수
+        let scoreYongHoon = 0; // 조용훈 점수 (항상 조용훈의 누적 점수)
+        let scoreHwaYong = 0;  // 이화용 점수
 
         function setFocus(type) {
             currentFocus = type;
@@ -436,10 +437,8 @@
             isActionActive = true;
 
             if (!isBottomInning) {
-                // 조용훈 투수 플레이 시점
                 throwPitchAsYongHoon(type);
             } else {
-                // 이화용 투수 플레이 시점 (사용자가 이화용 투수의 구종을 선택해 던지고, 조용훈 타자가 자동으로 침)
                 throwPitchAsHwaYong(type);
             }
         }
@@ -455,7 +454,7 @@
             radarPopup.style.display = 'none';
             messageEl.innerText = "조용훈 투수 와인드업! 공이 날아갑니다.";
 
-            let speed = (158 + Math.random() * 4).toFixed(1); // 158~162 강속구
+            let speed = 0;
             let startX = 240, startY = 45;
             let endX = 220, endY = 185;
 
@@ -525,7 +524,7 @@
             });
         }
 
-        // 2. 이화용 투수 플레이 (공수 교대 후 사용자 플레이어)
+        // 2. 이화용 투수 플레이 (공수 교대 후)
         function throwPitchAsHwaYong(type) {
             const messageEl = document.getElementById('message');
             const radarPopup = document.getElementById('radar-popup');
@@ -535,23 +534,19 @@
             radarPopup.style.display = 'none';
             messageEl.innerText = "이화용 투수 투구! 조용훈 타자가 타격합니다!";
 
-            // 이화용 투수 느린 구속 (직구 80~85, 커브 60~65)
-            let speed = 0;
-            if (type === 'fastball' || type === 'slider') speed = (80 + Math.random() * 5).toFixed(1);
-            else speed = (60 + Math.random() * 5).toFixed(1);
-
+            let speed = (type === 'fastball' || type === 'slider') ? (80 + Math.random() * 5).toFixed(1) : (60 + Math.random() * 5).toFixed(1);
             let startX = 240, startY = 45;
             let endX = 220, endY = 185;
 
             animateBall(startX, startY, endX, endY, 400, type, () => {
-                // 조용훈 타자: 치면 무조건 안타 혹은 홈런! 조용훈 점수 상승
-                homeScore++;
+                // 조용훈 타자 타격 성공 -> 조용훈 점수(scoreYongHoon) 상승!
+                scoreYongHoon++;
                 let hitResult = Math.random() > 0.4 ? "💥 통타! 초대형 홈런!!" : "🔥 좌중간 꿰뚫는 안타!";
                 
                 displaySpeed.innerText = speed + " km/h";
                 displayResult.innerText = hitResult;
                 radarPopup.style.display = 'block';
-                messageEl.innerText = `[구속 ${speed}km/h] 조용훈 타자 시원한 타격 폭발! 점수 획득!`;
+                messageEl.innerText = `[구속 ${speed}km/h] 조용훈 타자 시원한 타격 폭발! 조용훈 점수 획득!`;
 
                 setTimeout(() => {
                     updateScoreboard();
@@ -621,8 +616,10 @@
 
         function setupHwaYongPitcherMode() {
             document.getElementById('inning-title').innerText = "공수 교대 [이화용 투수 플레이]";
-            document.getElementById('score-label-1').innerText = "이화용 투수";
-            document.getElementById('score-label-2').innerText = "조용훈 타자";
+            
+            // 스코어보드 라벨 명확하게 고정 (왼쪽: 이화용 투수, 오른쪽: 조용훈 타자)
+            document.getElementById('score-label-left').innerText = "이화용 투수";
+            document.getElementById('score-label-right').innerText = "조용훈 타자";
 
             // 투수 체형 변경: 이화용 투수 (뚱뚱함 + 안경)
             const pitcherBox = document.getElementById('pitcher-box');
@@ -634,12 +631,12 @@
             batterBox.className = "batter-body-slim";
             batterBox.innerHTML = '조용훈<div class="batter-bat" id="batter-bat"></div>';
 
-            // 버튼 구속 안내 변경 (이화용 투수 구속: 직구 80~85, 커브 60~65)
+            // 버튼 구속 안내 변경
             document.getElementById('btn-1').innerText = "직구(80)";
             document.getElementById('btn-2').innerText = "슬라(80)";
             document.getElementById('btn-3').innerText = "커브(60)";
             document.getElementById('btn-4').innerText = "포크(60)";
-
+            
             document.getElementById('message').innerText = "이화용 투수 등판! 원하시는 구종을 골라 던지면 조용훈 타자가 홈런을 칩니다!";
         }
 
@@ -647,7 +644,10 @@
             document.getElementById('count-s').innerText = strikes;
             document.getElementById('count-b').innerText = balls;
             document.getElementById('count-o').innerText = outs;
-            document.getElementById('score-home').innerText = homeScore;
+            
+            // 점수 바인딩 수정: 이화용 투수(왼쪽)는 0점 유지, 조용훈 타자(오른쪽)가 scoreYongHoon 점수를 표시하도록 고정
+            document.getElementById('score-left').innerText = scoreHwaYong;
+            document.getElementById('score-right').innerText = scoreYongHoon;
         }
     </script>
 </body>
